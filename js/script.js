@@ -37,7 +37,6 @@ class App {
         let u;
         try { u = JSON.parse(localStorage.getItem(CONFIG.USER_KEY)); } catch(e) { u = null; }
         
-        // Generador de UUID simple
         const genUUID = () => {
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
                 var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -47,6 +46,7 @@ class App {
 
         if (!u || !u.id || u.id.startsWith('usr-')) {
             u = { id: genUUID(), voted: [], owned: [], alias: '', hasSaved: false };
+            localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(u)); 
         }
         return u;
     }
@@ -261,8 +261,8 @@ class App {
             this.refreshData();
             this.toast("¡Pegado! 🌍");
         } catch(e) { 
-            console.error("Post Error:", e);
-            this.toast("🔴 Error al publicar chiste."); 
+            console.error("Post Error Details:", e.message || e, e.details || "", e.hint || "");
+            this.toast(`🔴 Error: ${e.message || "Revisa la conexión"}`); 
         }
         this.setLoading(false);
     }
