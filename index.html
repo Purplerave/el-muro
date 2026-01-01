@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+    <meta name="theme-color" content="#121212">
+    <title>EL MURO | Chistes Malos AI</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Permanent+Marker&family=Kalam:wght@700&family=Inter:wght@400;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="pattern-overlay"></div>
+    <div id="toast-container"></div>
+    
+    <header class="main-header">
+        <div class="header-inner">
+            <h1 id="title-sign">
+                <span class="top-line">EL MURO DE LOS</span>
+                <span class="bot-line">CHISTES MALOS</span>
+            </h1>
+            
+            <div class="filter-bar">
+                <button class="filter-btn active" data-sort="new">NUEVOS</button>
+                <button class="filter-btn" data-sort="best">TOP 🔥</button>
+                <button class="filter-btn" data-sort="controversial">💀 PURGA</button>
+            </div>
+
+            <div class="header-controls">
+                <button id="mute-btn" class="icon-btn" aria-label="Mute">🔊</button>
+                <button id="mobile-dash-toggle" class="icon-btn mobile-only">🏆</button>
+            </div>
+        </div>
+    </header>
+
+    <div id="main-layout">
+        <main id="mural-wrapper">
+            <div id="mural" class="auto-grid"></div>
+            <div id="scroll-sentinel"></div>
+        </main>
+
+        <aside id="dashboard" class="glass-panel" aria-hidden="true">
+            <div class="dashboard-content">
+                <div id="purgatory-widget" class="dash-section danger-zone">
+                    <h3>💀 ZONA DE PELIGRO</h3>
+                    <div id="purgatory-status"></div>
+                    <ul id="purgatory-list" class="rank-list"></ul>
+                </div>
+
+                <div class="dash-section">
+                    <h3>🏆 HALL OF FAME</h3>
+                    <ul id="humorists-list" class="rank-list"></ul>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <footer id="input-bar">
+        <div class="input-linear-container">
+            <div class="user-badge" id="my-badge">
+                <div class="avatar-slot">
+                    <img id="my-avatar-img" src="" alt="Avatar">
+                </div>
+                <input type="text" id="user-alias" placeholder="TU ALIAS" maxlength="12">
+            </div>
+
+            <div class="color-picker">
+                <button class="dot active" style="--c:#FFEB3B" data-color="#FFEB3B"></button>
+                <button class="dot" style="--c:#FF4081" data-color="#FF4081"></button>
+                <button class="dot" style="--c:#00E676" data-color="#00E676"></button>
+                <button class="dot" style="--c:#2979FF" data-color="#2979FF"></button>
+            </div>
+
+            <div class="input-main">
+                <input type="text" id="secret-input" placeholder="¡Suelta tu peor chiste aquí...!" maxlength="300" autocomplete="off">
+            </div>
+
+            <button id="post-btn" class="send-btn">PEGAR</button>
+        </div>
+    </footer>
+
+    <!-- Supabase Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/script.js"></script>
+</body>
+</html>
