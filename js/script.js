@@ -1,5 +1,5 @@
 /**
- * EL MURO V10.1 - COMPATIBILITY & FIX
+ * EL MURO V10.2 - CLEAN SYNTAX
  */
 
 const SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -9,6 +9,14 @@ const CONFIG = {
     USER_KEY: 'elMuro_v6_usr',
     STORAGE_KEY: 'elMuro_v6_db',
     AI_NAME: '00000000-0000-0000-0000-000000000000'
+};
+
+// Utilidad externa para evitar errores de anidamiento
+const genUUID = function() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = (c == 'x' ? r : (r & 0x3 | 0x8));
+        return v.toString(16);
+    });
 };
 
 const { createClient } = supabase;
@@ -32,18 +40,12 @@ class App {
     }
 
     loadUser() {
-        let u;
+        let u = null;
         try { 
-            u = JSON.parse(localStorage.getItem(CONFIG.USER_KEY)); 
+            const data = localStorage.getItem(CONFIG.USER_KEY);
+            if (data) u = JSON.parse(data);
         } catch(e) { 
-            u = null; 
-        }
-        
-        function genUUID() {
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
+            console.error("User load error");
         }
 
         if (!u || !u.id || u.id.length < 20) {
@@ -176,9 +178,9 @@ class App {
         el.style.setProperty('--rot', (joke.rot || 0) + 'deg');
         const isVoted = this.user.voted.includes(joke.id);
         
-        el.innerHTML = "` +
-            `<div class="post-body">${this.sanitize(joke.text)}</div>` +
-            `<div class="post-footer">
+        el.innerHTML = `
+            <div class="post-body">${this.sanitize(joke.text)}</div>
+            <div class="post-footer">
                 <div class="author-info"><img src="https://api.dicebear.com/7.x/bottts/svg?seed=${joke.authorid || joke.author}">${this.sanitize(joke.author)}</div>
                 <div class="actions">
                     ${this.isAdmin ? `<button class="act-btn" onclick="app.deleteJoke('${joke.id}')" style="background:#ff1744; color:#fff;">🗑️</button>` : ''}
@@ -197,9 +199,11 @@ class App {
         
         this.setLoading(true);
         try {
+            const activeDot = document.querySelector('.dot.active');
+            const color = activeDot ? activeDot.dataset.color : '#FFEB3B';
             const joke = { 
                 text: text, author: alias, authorid: this.user.id, 
-                color: document.querySelector('.dot.active').dataset.color, 
+                color: color, 
                 rot: parseFloat((Math.random()*4-2).toFixed(1)), 
                 votes_best: 0, votes_bad: 0 
             };
@@ -294,7 +298,7 @@ class App {
         const container = document.getElementById('toast-container');
         if(container) {
             container.appendChild(t);
-            setTimeout(function() { t.classList.remove('show'); setTimeout(function() { t.remove(); }, 300); }, 2000);
+            setTimeout(function() { t.classList.remove('show'); setTimeout(function() { t.remove(), 300); }, 2000);
         }
     }
 
