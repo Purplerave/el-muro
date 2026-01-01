@@ -1,5 +1,5 @@
 /**
- * EL MURO V13.7 - ANTI-CRASH VERSION
+ * EL MURO V13.8 - REPARACIÓN FINAL EMOJIS Y CARGA
  */
 
 var SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -37,6 +37,7 @@ function loadUser() {
         u = { id: genUUID(), voted: [], owned: [], alias: '', hasSaved: false };
         localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(u));
     }
+    console.log("Usuario cargado:", u.id);
     return u;
 }
 
@@ -61,17 +62,23 @@ function cacheDOM() {
 }
 
 async function initGlobalSync() {
+    console.log("Intentando conectar con Supabase...");
     try {
         const res = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(200);
         if (res.data) {
+            console.log("Datos recibidos:", res.data.length);
             app.state.jokes = res.data;
             if (new Date().getDate() === 1) executePurge();
             freezeOrder();
             syncWall();
             checkDailyAIJoke();
             localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(res.data));
+        } else {
+            console.error("No hay datos o error:", res.error);
         }
-    } catch (e) {}
+    } catch (e) {
+        console.error("Excepcion en sync:", e);
+    }
 
     client.channel('public:jokes').on('postgres_changes', { event: '*', schema: 'public', table: 'jokes' }, function(payload) {
         handleRealtime(payload);
@@ -114,12 +121,23 @@ function updateCardUI(joke) {
 function syncWall() {
     var container = app.dom.mural;
     if(!container) return;
-    var fragment = document.createDocumentFragment();
     container.innerHTML = '';
     
-    app.displayOrder.forEach(function(j) { fragment.appendChild(createCard(j)); });
-    container.appendChild(fragment);
-    container.parentElement.scrollTop = 0;
+    if (app.state.sort === 'controversial') {
+        var days = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate();
+        var info = document.createElement('div');
+        info.style.cssText = "grid-column:1/-1; background:#1a1a1a; border:2px dashed #ff1744; padding:20px; text-align:center; margin-bottom:20px;";
+        info.innerHTML = '<h2 style="font-family:Bangers; color:#ff1744; font-size:2rem;">💀 MODO PURGA</h2><p style="color:#aaa;">Días para el juicio: '+days+'</p>';
+        container.appendChild(info);
+    }
+
+    if (app.displayOrder.length === 0) {
+        container.innerHTML += '<div style="grid-column:1/-1; text-align:center; padding:50px; color:#aaa;"><h2 style="font-family:Bangers; font-size:3rem; color:var(--accent);">VACÍO...</h2></div>';
+    } else {
+        for (var i=0; i<app.displayOrder.length; i++) {
+            container.appendChild(createCard(app.displayOrder[i]));
+        }
+    }
     updateStats();
 }
 
@@ -131,20 +149,8 @@ function createCard(joke) {
     el.style.setProperty('--rot', (joke.rot || 0) + 'deg');
     
     var isVoted = app.user.voted.indexOf(joke.id) !== -1;
-    var purgeActive = isPurgeActive();
-    var isCondemned = (joke.votes_bad || 0) > (joke.votes_best || 0);
-    
-    var actionsHTML = '';
-    if (app.state.sort === 'controversial' && purgeActive && isCondemned) {
-        var savedClass = app.user.hasSaved ? 'voted' : '';
-        actionsHTML = '<button class="act-btn vote-btn ' + savedClass + '" data-id="' + joke.id + '" data-type="save" style="background:var(--accent); color:#000;">SALVAR</button>';
-    } else {
-        var vClass = isVoted ? 'voted' : '';
-        actionsHTML = '<button class="act-btn vote-btn ' + vClass + '" data-id="' + joke.id + '" data-type="best">\u{1F923} <span>' + (joke.votes_best || 0) + '</span></button>' +
-                       '<button class="act-btn vote-btn ' + vClass + '" data-id="' + joke.id + '" data-type="bad">\u{1F345} <span>' + (joke.votes_bad || 0) + '</span></button>';
-    }
-
-    var adminBtn = app.isAdmin ? '<button class="act-btn del-btn" data-id="' + joke.id + '" style="background:#ff1744; color:#fff;">DEL</button>' : '';
+    var vClass = isVoted ? 'voted' : '';
+    var adminBtn = app.isAdmin ? '<button class="act-btn del-btn" data-id="' + joke.id + '" style="background:#ff1744; color:#fff;">🗑️</button>' : '';
     var authorImg = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (joke.authorid || joke.author);
 
     el.innerHTML = '<div class="post-body">' + sanitize(joke.text) + '</div>' +
@@ -155,8 +161,9 @@ function createCard(joke) {
             '</div>' +
             '<div class="actions">' +
                 adminBtn +
-                actionsHTML +
-                '<button class="act-btn share-btn" data-id="' + joke.id + '">\u{2197}</button>' +
+                '<button class="act-btn vote-btn ' + vClass + '" data-id="' + joke.id + '" data-type="best">🤣 <span>' + (joke.votes_best || 0) + '</span></button>' +
+                '<button class="act-btn vote-btn ' + vClass + '" data-id="' + joke.id + '" data-type="bad">🍅 <span>' + (joke.votes_bad || 0) + '</span></button>' +
+                '<button class="act-btn share-btn" data-id="' + joke.id + '">↗️</button>' +
             '</div>' +
         '</div>';
     return el;
@@ -174,19 +181,14 @@ function initDelegation() {
 }
 
 async function vote(id, type) {
-    if (type === 'save') {
-        if (app.user.hasSaved) return showToast('Ya has usado tu salvacion.');
-        type = 'best'; app.user.hasSaved = true;
-    } else {
-        if (app.user.voted.indexOf(id) !== -1) return showToast('Ya has votado');
-        if (app.user.owned.indexOf(id) !== -1) return showToast('Es tu chiste');
-    }
+    if (app.user.voted.indexOf(id) !== -1) return showToast('Ya has votado');
+    if (app.user.owned.indexOf(id) !== -1) return showToast('Es tu chiste');
     var joke = app.state.jokes.find(function(j) { return j.id === id; });
     var field = type === 'best' ? 'votes_best' : 'votes_bad';
     try {
         const res = await client.from('jokes').update({ [field]: (joke[field] || 0) + 1 }).eq('id', id);
         if (!res.error) { 
-            if (type !== 'best' || !app.user.hasSaved) app.user.voted.push(id);
+            app.user.voted.push(id);
             localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(app.user)); 
             refreshData(); 
         }
@@ -236,6 +238,7 @@ function isPurgeActive() {
 }
 
 window.onload = function() {
+    console.log("Iniciando EL MURO V13.8...");
     app.user = loadUser();
     cacheDOM();
     initDelegation();
@@ -251,14 +254,12 @@ window.onload = function() {
             syncWall();
         };
     });
-    app.dom.muteBtn.onclick = function() { app.isMuted = !app.isMuted; app.dom.muteBtn.innerText = app.isMuted ? 'MUTE' : 'VOL'; };
+    app.dom.muteBtn.onclick = function() { app.isMuted = !app.isMuted; app.dom.muteBtn.innerText = app.isMuted ? '🔇' : '🔊'; };
     app.dom.dashToggle.onclick = function() {
         var isH = app.dom.dashboard.getAttribute('aria-hidden') === 'true';
         app.dom.dashboard.setAttribute('aria-hidden', !isH);
-        app.dom.dashToggle.innerText = isH ? 'X' : 'RANK';
+        app.dom.dashToggle.innerText = isH ? 'X' : '🏆';
     };
-    var closeBtn = document.getElementById('close-dash-btn');
-    if(closeBtn) closeBtn.onclick = function() { app.dom.dashboard.setAttribute('aria-hidden', 'true'); app.dom.dashToggle.innerText = 'RANK'; };
     if(app.dom.avatarImg) app.dom.avatarImg.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + app.user.id;
     initGlobalSync();
 };
@@ -280,9 +281,9 @@ async function checkDailyAIJoke() {
 
 function updateStats() {
     var worst = app.state.jokes.filter(function(j) { return (j.votes_bad || 0) > (j.votes_best || 0); }).slice(0, 3);
-    if (app.dom.purgList) app.dom.purgList.innerHTML = worst.map(function(j) { return '<li><img src="https://api.dicebear.com/7.x/bottts/svg?seed=' + (j.authorid || j.author) + '" style="width:20px;height:20px;border-radius:50%;margin-right:10px;"> <span>' + j.author + '</span> <span style="color:#ff1744">' + j.votes_bad + '</span></li>'; }).join('') || '<li>Libre</li>';
+    if (app.dom.purgList) app.dom.purgList.innerHTML = worst.map(function(j) { return '<li><img src="https://api.dicebear.com/7.x/bottts/svg?seed=' + (j.authorid || j.author) + '" style="width:20px;height:20px;border-radius:50%;margin-right:10px;"> <span>' + j.author + '</span> <span style="color:#ff1744">🍅 ' + j.votes_bad + '</span></li>'; }).join('') || '<li>Libre</li>';
     var best = app.state.jokes.slice().sort(function(a,b) { return (b.votes_best || 0) - (a.votes_best || 0); }).slice(0, 5);
-    if (app.dom.humorList) app.dom.humorList.innerHTML = best.map(function(j) { return '<li><img src="https://api.dicebear.com/7.x/bottts/svg?seed=' + (j.authorid || j.author) + '" style="width:20px;height:20px;border-radius:50%;margin-right:10px;"> <span>' + j.author + '</span> <span style="color:var(--accent)">' + (j.votes_best || 0) + '</span></li>'; }).join('');
+    if (app.dom.humorList) app.dom.humorList.innerHTML = best.map(function(j) { return '<li><img src="https://api.dicebear.com/7.x/bottts/svg?seed=' + (j.authorid || j.author) + '" style="width:20px;height:20px;border-radius:50%;margin-right:10px;"> <span>' + j.author + '</span> <span style="color:var(--accent)">🤣 ' + (j.votes_best || 0) + '</span></li>'; }).join('');
 }
 
 async function deleteJoke(id) { if (confirm('Borrar?')) { await client.from('jokes').delete().eq('id', id); refreshData(); } }
