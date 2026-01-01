@@ -262,9 +262,9 @@ async function checkDailyAIJoke() {
 
 function updateStats() {
     const worst = app.state.jokes.filter(j => (j.votes_bad || 0) > (j.votes_best || 0)).slice(0, 3);
-    app.dom.purgList.innerHTML = worst.map(j => `<li><span>${j.author}</span> 🍅 ${j.votes_bad}</li>`).join('') || '<li>Libre</li>';
-    const best = app.state.jokes.sort((a,b) => b.votes_best - a.votes_best).slice(0, 5);
-    app.dom.humorList.innerHTML = best.map(j => `<li><span>${j.author}</span> 🤣 ${j.votes_best}</li>`).join('');
+    app.dom.purgList.innerHTML = worst.map(j => `<li><img src="https://api.dicebear.com/7.x/bottts/svg?seed=${j.authorid || j.author}" style="width:20px;height:20px;border-radius:50%;margin-right:10px;"> <span>${j.author}</span> <span style="color:#ff1744">🍅 ${j.votes_bad}</span></li>`).join('') || '<li>Libre</li>';
+    const best = [...app.state.jokes].sort((a,b) => (b.votes_best || 0) - (a.votes_best || 0)).slice(0, 5);
+    app.dom.humorList.innerHTML = best.map(j => `<li><img src="https://api.dicebear.com/7.x/bottts/svg?seed=${j.authorid || j.author}" style="width:20px;height:20px;border-radius:50%;margin-right:10px;"> <span>${j.author}</span> <span style="color:var(--accent)">🤣 ${j.votes_best || 0}</span></li>`).join('');
 }
 
 async function deleteJoke(id) { if (confirm("¿Borrar?")) { await client.from('jokes').delete().eq('id', id); refreshData(); } }
