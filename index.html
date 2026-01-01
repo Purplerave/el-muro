@@ -2,29 +2,36 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#121212">
     <title>EL MURO | Chistes Malos AI</title>
-    <link rel="stylesheet" href="css/style.css?v=3.4">
+    
+    <!-- Metadatos para Redes Sociales (SEO/Viral) -->
+    <meta property="og:title" content="EL MURO DE LOS CHISTES MALOS 🧱">
+    <meta property="og:description" content="La comunidad de los peores chistes de internet. ¿Podrás sobrevivir a la Purga?">
+    <meta property="og:image" content="https://purplerave.github.io/el-muro/assets/preview.png">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="stylesheet" href="css/style.css?v=3.5">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Permanent+Marker&family=Kalam:wght@400;700&family=Dancing+Script:wght@700&family=Indie+Flower&family=Inter:wght@400;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Permanent+Marker&family=Kalam:wght@400;700&family=Inter:wght@400;900&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <div class="pattern-overlay"></div>
     <div id="toast-container"></div>
     
     <header class="main-header">
         <div class="header-inner">
-            <div class="header-top-row" style="display:flex; width:100%; justify-content:space-between; align-items:center;">
+            <div class="header-top-row">
                 <h1 id="title-sign">
                     <span class="top-line">EL MURO DE LOS</span>
                     <span class="bot-line">CHISTES MALOS</span>
                 </h1>
                 
                 <div class="header-controls">
-                    <button id="mute-btn" class="icon-btn" aria-label="Mute">🔊</button>
+                    <input type="text" id="search-input" placeholder="🔍 Buscar..." class="search-bar">
+                    <button id="mute-btn" class="icon-btn">🔊</button>
                     <button id="mobile-dash-toggle" class="icon-btn mobile-only">🏆</button>
                 </div>
             </div>
@@ -40,12 +47,11 @@
     <div id="main-layout">
         <main id="mural-wrapper">
             <div id="mural" class="auto-grid"></div>
-            <div id="scroll-sentinel"></div>
         </main>
 
-        <aside id="dashboard" class="glass-panel" aria-hidden="true">
+        <aside id="dashboard" aria-hidden="true">
             <div class="dashboard-content">
-                <div id="purgatory-widget" class="dash-section danger-zone">
+                <div class="dash-section danger-zone">
                     <h3>💀 ZONA DE PELIGRO</h3>
                     <div id="purgatory-status"></div>
                     <ul id="purgatory-list" class="rank-list"></ul>
@@ -61,7 +67,6 @@
 
     <footer id="input-bar">
         <div class="input-linear-container">
-            <!-- FILA 1: IDENTIDAD Y ESTILO -->
             <div class="row-1-mobile">
                 <div class="user-badge" id="my-badge">
                     <div class="avatar-slot">
@@ -78,18 +83,17 @@
                 </div>
             </div>
 
-            <!-- FILA 2: EL CHISTE -->
             <div class="row-2-mobile">
                 <div class="input-main">
-                    <input type="text" id="secret-input" placeholder="¡Suelta tu peor chiste aquí...!" maxlength="300" autocomplete="off">
+                    <input type="text" id="secret-input" placeholder="¡Suelta tu peor chiste...!" maxlength="300">
+                    <span id="char-counter">0/300</span>
                 </div>
                 <button id="post-btn" class="send-btn">PEGAR</button>
             </div>
         </div>
     </footer>
 
-    <!-- Supabase Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/script.js"></script>
+    <script src="js/script.js?v=13.0"></script>
 </body>
 </html>
