@@ -1,5 +1,5 @@
 /**
- * EL MURO V10.3 - ESTABILIDAD GARANTIZADA
+ * EL MURO V10.4 - FIX INVALID TOKEN
  */
 
 const SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -72,7 +72,7 @@ class App {
             }
         } catch (e) {}
 
-        client.channel('public:jokes').on('postgres_changes', { event: '*', schema: 'public', table: 'jokes' }, (payload) => {
+        client.channel('public:jokes').on('postgres_changes', { event: '*', schema: 'public', table: 'jokes' }, (p) => {
             this.refreshData();
         }).subscribe();
     }
@@ -106,29 +106,29 @@ class App {
 
     initEvents() {
         const self = this;
-        this.dom.postBtn.onclick = () => self.post();
+        this.dom.postBtn.onclick = function() { self.post(); };
         
-        this.dom.filters.forEach(btn => {
-            btn.onclick = () => {
-                self.dom.filters.forEach(f => f.classList.remove('active'));
+        this.dom.filters.forEach(function(btn) {
+            btn.onclick = function() {
+                self.dom.filters.forEach(function(f) { f.classList.remove('active'); });
                 btn.classList.add('active');
                 self.state.sort = btn.dataset.sort;
                 self.syncWall(); 
             };
         });
 
-        this.dom.dots.forEach(d => {
-            d.onclick = () => {
-                self.dom.dots.forEach(x => x.classList.remove('active'));
+        this.dom.dots.forEach(function(d) {
+            d.onclick = function() {
+                self.dom.dots.forEach(function(x) { x.classList.remove('active'); });
                 d.classList.add('active');
             };
         });
 
-        if(this.dom.title) this.dom.title.onclick = () => self.tryAdminAccess();
-        if(this.dom.muteBtn) this.dom.muteBtn.onclick = () => self.toggleMute();
+        if(this.dom.title) this.dom.title.onclick = function() { self.tryAdminAccess(); };
+        if(this.dom.muteBtn) this.dom.muteBtn.onclick = function() { self.toggleMute(); };
         
         if(this.dom.dashToggle) {
-            this.dom.dashToggle.onclick = () => {
+            this.dom.dashToggle.onclick = function() {
                 const isHidden = self.dom.dashboard.getAttribute('aria-hidden') === 'true';
                 self.dom.dashboard.setAttribute('aria-hidden', !isHidden);
                 self.dom.dashToggle.innerText = isHidden ? "❌" : "🏆";
@@ -161,7 +161,8 @@ class App {
         if (sorted.length === 0) {
             container.innerHTML += '<div style="grid-column:1/-1; text-align:center; padding:50px; color:#aaa;"><h2 style="font-family:\'Bangers\'; font-size:3rem; color:var(--accent);">VACÍO...</h2></div>';
         } else {
-            sorted.forEach(j => { container.appendChild(this.createCard(j)); });
+            const self = this;
+            sorted.forEach(function(j) { container.appendChild(self.createCard(j)); });
         }
         this.updateStats();
     }
@@ -173,17 +174,19 @@ class App {
         el.style.setProperty('--rot', (joke.rot || 0) + 'deg');
         const isVoted = this.user.voted.includes(joke.id);
         
-        el.innerHTML = `
-            <div class="post-body">${this.sanitize(joke.text)}</div>
-            <div class="post-footer">
-                <div class="author-info"><img src="https://api.dicebear.com/7.x/bottts/svg?seed=${joke.authorid || joke.author}">${this.sanitize(joke.author)}</div>
-                <div class="actions">
-                    ${this.isAdmin ? `<button class="act-btn" onclick="app.deleteJoke('${joke.id}')" style="background:#ff1744; color:#fff;">🗑️</button>` : ''}
-                    <button class="act-btn ${isVoted?'voted':''}" onclick="app.vote('${joke.id}', 'best')">🤣 <span>${joke.votes_best || 0}</span></button>
-                    <button class="act-btn ${isVoted?'voted':''}" onclick="app.vote('${joke.id}', 'bad')">🍅 <span>${joke.votes_bad || 0}</span></button>
-                    <button class="act-btn" onclick="app.share('${joke.id}')">↗️</button>
-                </div>
-            </div>`;
+        var adminBtn = this.isAdmin ? '<button class="act-btn" onclick="app.deleteJoke(\"' + joke.id + '\")" style="background:#ff1744; color:#fff;">🗑️</button>' : '';
+        var votedClass = isVoted ? 'voted' : '';
+        
+        el.innerHTML = '<div class="post-body">' + this.sanitize(joke.text) + '</div>' +
+            '<div class="post-footer">' + 
+                '<div class="author-info"><img src="https://api.dicebear.com/7.x/bottts/svg?seed=' + (joke.authorid || joke.author) + '">' + this.sanitize(joke.author) + '</div>' + 
+                '<div class="actions">' + 
+                    adminBtn +
+                    '<button class="act-btn ' + votedClass + '" onclick="app.vote(\"' + joke.id + '\", \'best\')">🤣 <span>' + (joke.votes_best || 0) + '</span></button>' + 
+                    '<button class="act-btn ' + votedClass + '" onclick="app.vote(\"' + joke.id + '\", \'bad\')">🍅 <span>' + (joke.votes_bad || 0) + '</span></button>' + 
+                    '<button class="act-btn" onclick="app.share(\"' + joke.id + '\")">↗️</button>' + 
+                '</div>' + 
+            '</div>';
         return el;
     }
 
@@ -210,6 +213,7 @@ class App {
             this.refreshData();
             this.toast("¡Pegado! 🌍");
         } catch(e) { 
+            console.error("Error Post:", e);
             this.toast("🔴 Error al publicar"); 
         }
         this.setLoading(false);
@@ -238,9 +242,9 @@ class App {
 
     updateStats() {
         const worst = this.state.jokes.filter(j => (j.votes_bad || 0) > 0).sort((a,b) => b.votes_bad - a.votes_bad).slice(0, 3);
-        if (this.dom.purgList) this.dom.purgList.innerHTML = worst.length ? worst.map(j => `<li><span>${j.author}</span> <span>🍅 ${j.votes_bad}</span></li>`).join('') : '<li>Vacío...</li>';
+        if (this.dom.purgList) this.dom.purgList.innerHTML = worst.length ? worst.map(j => '<li><span>' + j.author + '</span> <span>🍅 ' + j.votes_bad + '</span></li>').join('') : '<li>Vacío...</li>';
         const best = this.state.jokes.filter(j => (j.votes_best || 0) > 0).sort((a,b) => b.votes_best - a.votes_best).slice(0, 5);
-        if (this.dom.humorList) this.dom.humorList.innerHTML = best.map(j => `<li><span>${j.author}</span> <span>🤣 ${j.votes_best}</span></li>`).join('');
+        if (this.dom.humorList) this.dom.humorList.innerHTML = best.map(j => '<li><span>' + j.author + '</span> <span>🤣 ' + j.votes_best + '</span></li>').join('');
     }
 
     tryAdminAccess() {
@@ -280,7 +284,7 @@ class App {
         const container = document.getElementById('toast-container');
         if(container) {
             container.appendChild(t);
-            setTimeout(() => { t.classList.remove('show'); setTimeout(() => { t.remove(); }, 300); }, 2000);
+            setTimeout(function() { t.classList.remove('show'); setTimeout(function() { if(t.parentNode) t.remove(); }, 300); }, 2000);
         }
     }
 
