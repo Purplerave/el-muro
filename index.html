@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <meta name="theme-color" content="#121212">
     <title>EL MURO | Chistes Malos AI</title>
-    <link rel="stylesheet" href="css/style.css?v=1.4">
+    <link rel="stylesheet" href="css/style.css?v=1.5">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Permanent+Marker&family=Kalam:wght@400;700&family=Dancing+Script:wght@700&family=Indie+Flower&family=Inter:wght@400;900&display=swap" rel="stylesheet">
@@ -59,25 +59,27 @@
 
     <footer id="input-bar">
         <div class="input-linear-container">
-            <div class="user-badge" id="my-badge">
-                <div class="avatar-slot">
-                    <img id="my-avatar-img" src="" alt="Avatar">
+            <!-- FILA 1: IDENTIDAD Y ESTILO -->
+            <div class="row-1-mobile">
+                <div class="user-badge" id="my-badge">
+                    <input type="text" id="user-alias" placeholder="TU ALIAS" maxlength="12">
                 </div>
-                <input type="text" id="user-alias" placeholder="TU ALIAS" maxlength="12">
+
+                <div class="color-picker">
+                    <button class="dot active" style="--c:#FFEB3B" data-color="#FFEB3B"></button>
+                    <button class="dot" style="--c:#FF4081" data-color="#FF4081"></button>
+                    <button class="dot" style="--c:#00E676" data-color="#00E676"></button>
+                    <button class="dot" style="--c:#2979FF" data-color="#2979FF"></button>
+                </div>
             </div>
 
-            <div class="color-picker">
-                <button class="dot active" style="--c:#FFEB3B" data-color="#FFEB3B"></button>
-                <button class="dot" style="--c:#FF4081" data-color="#FF4081"></button>
-                <button class="dot" style="--c:#00E676" data-color="#00E676"></button>
-                <button class="dot" style="--c:#2979FF" data-color="#2979FF"></button>
+            <!-- FILA 2: EL CHISTE -->
+            <div class="row-2-mobile">
+                <div class="input-main">
+                    <input type="text" id="secret-input" placeholder="¡Suelta tu peor chiste aquí...!" maxlength="300" autocomplete="off">
+                </div>
+                <button id="post-btn" class="send-btn">PEGAR</button>
             </div>
-
-            <div class="input-main">
-                <input type="text" id="secret-input" placeholder="¡Suelta tu peor chiste aquí...!" maxlength="300" autocomplete="off">
-            </div>
-
-            <button id="post-btn" class="send-btn">PEGAR</button>
         </div>
     </footer>
 
