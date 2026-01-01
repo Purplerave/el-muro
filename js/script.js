@@ -142,10 +142,12 @@ function syncWall() {
     container.innerHTML = '';
     
     if (app.state.sort === 'controversial') {
+        const active = isPurgeActive();
         const days = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate();
         const info = document.createElement('div');
-        info.style.cssText = "grid-column:1/-1; background:#1a1a1a; border:2px dashed #ff1744; padding:20px; text-align:center; margin-bottom:20px;";
-        info.innerHTML = `<h2 style="font-family:Bangers; color:#ff1744; font-size:2rem;">💀 MODO PURGA</h2><p style="color:#aaa;">Días para el juicio: ${days}</p>`;
+        info.style.cssText = "grid-column:1/-1; background:rgba(255,23,68,0.1); border:1px dashed #ff1744; padding:12px; text-align:center; margin-bottom:15px; border-radius:5px;";
+        info.innerHTML = `<h3 style="font-family:Bangers; color:#ff1744; font-size:1.2rem; margin:0;">💀 MODO PURGA</h3>
+                          <p style="color:#ccc; font-size:0.85rem; margin:5px 0 0 0;">${active ? "<strong>¡JUICIO FINAL!</strong> Salva a uno antes de fin de mes." : "Los 3 chistes con más tomates que risas se borrarán en " + days + " días."}</p>`;
         container.appendChild(info);
     }
 
