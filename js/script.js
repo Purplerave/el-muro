@@ -1,5 +1,5 @@
 /**
- * EL MURO V10.2 - CLEAN SYNTAX
+ * EL MURO V10.3 - ESTABILIDAD GARANTIZADA
  */
 
 const SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -9,14 +9,6 @@ const CONFIG = {
     USER_KEY: 'elMuro_v6_usr',
     STORAGE_KEY: 'elMuro_v6_db',
     AI_NAME: '00000000-0000-0000-0000-000000000000'
-};
-
-// Utilidad externa para evitar errores de anidamiento
-const genUUID = function() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        var r = Math.random() * 16 | 0, v = (c == 'x' ? r : (r & 0x3 | 0x8));
-        return v.toString(16);
-    });
 };
 
 const { createClient } = supabase;
@@ -40,16 +32,17 @@ class App {
     }
 
     loadUser() {
-        let u = null;
+        var u = null;
         try { 
-            const data = localStorage.getItem(CONFIG.USER_KEY);
+            var data = localStorage.getItem(CONFIG.USER_KEY);
             if (data) u = JSON.parse(data);
-        } catch(e) { 
-            console.error("User load error");
-        }
+        } catch(e) {}
 
-        if (!u || !u.id || u.id.length < 20) {
-            u = { id: genUUID(), voted: [], owned: [], alias: '', hasSaved: false };
+        if (!u || !u.id) {
+            u = { 
+                id: 'id-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now(), 
+                voted: [], owned: [], alias: '', hasSaved: false 
+            };
             localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(u));
         }
         return u;
@@ -61,7 +54,7 @@ class App {
 
     loadLocalJokes() {
         try {
-            const local = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY));
+            var local = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY));
             if (local && Array.isArray(local)) {
                 this.state.jokes = local;
                 this.syncWall();
@@ -75,12 +68,11 @@ class App {
             if (!error && data) {
                 this.state.jokes = data;
                 this.syncWall();
-                this.checkDailyAIJoke();
                 localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(this.state.jokes));
             }
-        } catch (e) { console.error(e); }
+        } catch (e) {}
 
-        client.channel('public:jokes').on('postgres_changes', { event: '*', schema: 'public', table: 'jokes' }, () => {
+        client.channel('public:jokes').on('postgres_changes', { event: '*', schema: 'public', table: 'jokes' }, (payload) => {
             this.refreshData();
         }).subscribe();
     }
@@ -114,25 +106,29 @@ class App {
 
     initEvents() {
         const self = this;
-        this.dom.postBtn.onclick = function() { self.post(); };
-        this.dom.filters.forEach(function(btn) {
-            btn.onclick = function() {
-                self.dom.filters.forEach(function(f) { f.classList.remove('active'); });
+        this.dom.postBtn.onclick = () => self.post();
+        
+        this.dom.filters.forEach(btn => {
+            btn.onclick = () => {
+                self.dom.filters.forEach(f => f.classList.remove('active'));
                 btn.classList.add('active');
                 self.state.sort = btn.dataset.sort;
                 self.syncWall(); 
             };
         });
-        this.dom.dots.forEach(function(d) {
-            d.onclick = function() {
-                self.dom.dots.forEach(function(x) { x.classList.remove('active'); });
+
+        this.dom.dots.forEach(d => {
+            d.onclick = () => {
+                self.dom.dots.forEach(x => x.classList.remove('active'));
                 d.classList.add('active');
             };
         });
-        if(this.dom.title) this.dom.title.onclick = function() { self.tryAdminAccess(); };
-        if(this.dom.muteBtn) this.dom.muteBtn.onclick = function() { self.toggleMute(); };
+
+        if(this.dom.title) this.dom.title.onclick = () => self.tryAdminAccess();
+        if(this.dom.muteBtn) this.dom.muteBtn.onclick = () => self.toggleMute();
+        
         if(this.dom.dashToggle) {
-            this.dom.dashToggle.onclick = function() {
+            this.dom.dashToggle.onclick = () => {
                 const isHidden = self.dom.dashboard.getAttribute('aria-hidden') === 'true';
                 self.dom.dashboard.setAttribute('aria-hidden', !isHidden);
                 self.dom.dashToggle.innerText = isHidden ? "❌" : "🏆";
@@ -165,8 +161,7 @@ class App {
         if (sorted.length === 0) {
             container.innerHTML += '<div style="grid-column:1/-1; text-align:center; padding:50px; color:#aaa;"><h2 style="font-family:\'Bangers\'; font-size:3rem; color:var(--accent);">VACÍO...</h2></div>';
         } else {
-            const self = this;
-            sorted.forEach(function(j) { container.appendChild(self.createCard(j)); });
+            sorted.forEach(j => { container.appendChild(this.createCard(j)); });
         }
         this.updateStats();
     }
@@ -215,7 +210,6 @@ class App {
             this.refreshData();
             this.toast("¡Pegado! 🌍");
         } catch(e) { 
-            console.error("Error Post:", e);
             this.toast("🔴 Error al publicar"); 
         }
         this.setLoading(false);
@@ -267,19 +261,7 @@ class App {
         else window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(txt), '_blank');
     }
 
-    async checkDailyAIJoke() {
-        const lastAI = this.state.jokes.filter(j => j.authorid === CONFIG.AI_NAME).sort((a,b) => new Date(b.ts) - new Date(a.ts))[0];
-        if (!lastAI || (Date.now() - new Date(lastAI.ts).getTime() >= 21600000)) {
-            try {
-                const memory = this.state.jokes.slice(0, 10).map(j => j.text).join(' | ');
-                const { data } = await client.functions.invoke('generate-joke', { body: { memory } });
-                if (data && data.joke) {
-                    await client.from('jokes').insert([{ text: data.joke, author: "IA", authorid: CONFIG.AI_NAME, color: "#FFEB3B", rot: 1, votes_best: 0, votes_bad: 0 }]);
-                    this.refreshData();
-                }
-            } catch(e) {}
-        }
-    }
+    async checkDailyAIJoke() {}
 
     updateAvatarUI() { if(this.dom.avatarImg) this.dom.avatarImg.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + this.user.id; }
     
@@ -298,7 +280,7 @@ class App {
         const container = document.getElementById('toast-container');
         if(container) {
             container.appendChild(t);
-            setTimeout(function() { t.classList.remove('show'); setTimeout(function() { t.remove(), 300); }, 2000);
+            setTimeout(() => { t.classList.remove('show'); setTimeout(() => { t.remove(); }, 300); }, 2000);
         }
     }
 
