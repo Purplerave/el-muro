@@ -30,29 +30,39 @@ body {
 .author-info { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: bold; }
 .author-info img { width: 24px !important; height: 24px !important; border-radius: 50%; border: 1px solid #000; background: #fff; flex-shrink: 0; }
 
-/* --- INPUT BAR --- */
+/* --- INPUT BAR (DESKTOP) --- */
 #input-bar { position: fixed; bottom: 0; width: 100%; background: #111; border-top: 3px solid var(--accent); z-index: 200; padding: 10px 0; }
-.input-linear-container { display: flex; flex-direction: column; gap: 10px; padding: 0 15px; }
+.input-linear-container { display: flex; flex-direction: row; gap: 15px; align-items: center; justify-content: center; max-width: 1400px; margin: 0 auto; padding: 0 20px; }
 
-.row-1-mobile { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+.row-1-mobile, .row-2-mobile { display: contents; } /* En PC no hay filas separadas */
+
 .user-badge { display: flex; align-items: center; background: #222; padding: 5px 10px; border: 1px solid #444; border-radius: 5px; }
 .avatar-slot { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #000; background: #fff; overflow: hidden; margin-right: 10px; flex-shrink: 0; }
 .avatar-slot img { width: 100%; height: 100%; object-fit: cover; }
-#user-alias { background: transparent; border: none; color: var(--accent); width: 80px; outline: none; font-weight: bold; }
+#user-alias { background: transparent; border: none; color: var(--accent); width: 100px; outline: none; font-weight: bold; font-family: var(--font-hand); }
 
-.color-picker { display: flex; gap: 10px; }
-.dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #000; background: var(--c); cursor: pointer; }
+.color-picker { display: flex; gap: 8px; }
+.dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #000; background: var(--c); cursor: pointer; }
 .dot.active { transform: scale(1.2); border-color: #fff; }
 
-.row-2-mobile { display: flex; gap: 8px; width: 100%; }
-#secret-input { flex: 1; height: 50px; background: #fff; border: 2px solid #000; padding: 0 15px; font-family: var(--font-hand); font-size: 1.1rem; border-radius: 5px; }
-.send-btn { background: var(--accent-sec); color: #fff; border: 2px solid #000; padding: 0 20px; font-family: 'Bangers'; font-size: 1.4rem; border-radius: 5px; cursor: pointer; }
+#secret-input { flex: 1; height: 45px; background: #fff; border: 2px solid #000; padding: 0 15px; font-family: var(--font-hand); font-size: 1.1rem; border-radius: 5px; }
+.send-btn { background: var(--accent-sec); color: #fff; border: 2px solid #000; padding: 0 25px; height: 45px; font-family: 'Bangers'; font-size: 1.4rem; border-radius: 5px; cursor: pointer; }
 
 /* --- MOBILE --- */
 @media (max-width: 768px) {
     :root { --header-h: 120px; }
     .bot-line { font-size: 1.8rem; }
     .auto-grid { grid-template-columns: 1fr; }
+    
+    .input-linear-container { flex-direction: column; gap: 8px; }
+    .row-1-mobile { display: flex !important; width: 100%; justify-content: space-between; align-items: center; }
+    .row-2-mobile { display: flex !important; width: 100%; gap: 5px; }
+    
+    #user-alias { width: 80px; }
+    .dot { width: 28px; height: 28px; }
+    #secret-input { height: 50px; }
+    .send-btn { padding: 0 15px; }
+
     #dashboard { position: fixed; right: -100%; top: 0; bottom: 0; width: 100%; z-index: 1000; background: #121212; transition: 0.4s; }
     #dashboard[aria-hidden="false"] { right: 0; }
 }
@@ -60,5 +70,5 @@ body {
 #dashboard { width: 320px; background: #1a1a1a; border-left: 3px solid #000; overflow-y: auto; }
 .rank-list li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px dashed #333; }
 .toast { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 2000; background: #fff; color: #000; padding: 10px 20px; border: 3px solid #000; font-weight: 900; }
-.spinner { width: 18px; height: 18px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s infinite; display: inline-block; }
+.spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s infinite; display: inline-block; }
 @keyframes spin { to { transform: rotate(360deg); } }
