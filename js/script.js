@@ -1,5 +1,5 @@
 /**
- * EL MURO V11.6 - ESTRUCTURA PLANA & LOGS DE GUERRA
+ * EL MURO V11.7 - AUTO AI ENGINE & SYNC FIX
  */
 
 const SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -13,7 +13,6 @@ const CONFIG = {
 
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// OBJETO GLOBAL PARA EL ESTADO
 window.app = {
     state: { jokes: [], sort: 'new' },
     user: null,
@@ -60,13 +59,12 @@ function cacheDOM() {
 }
 
 async function initGlobalSync() {
-    console.log("Sincronizando con Supabase...");
     try {
         const { data, error } = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(200);
         if (data) {
             app.state.jokes = data;
             syncWall();
-            checkDailyAIJoke();
+            checkDailyAIJoke(); // El sistema automático despierta aquí
             localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(data));
         }
     } catch (e) { console.error("Sync Error:", e); }
@@ -151,35 +149,51 @@ async function postJoke() {
     app.dom.postBtn.disabled = false;
 }
 
+async function checkDailyAIJoke() {
+    const lastAI = app.state.jokes.filter(j => j.authorid === CONFIG.AI_NAME).sort((a,b) => new Date(b.ts) - new Date(a.ts))[0];
+    const now = Date.now();
+    const sixHours = 6 * 60 * 60 * 1000;
+
+    if (!lastAI || (now - new Date(lastAI.ts).getTime() >= sixHours)) {
+        console.log("🤖 Es hora de un nuevo chiste de la IA (Automático)");
+        const jokeText = await generateGroqJoke();
+        if (jokeText) {
+            const names = ["Alex", "Leo", "Sofi", "Marc", "Eva", "Bruno", "Iris", "Luca"];
+            const joke = {
+                text: jokeText, author: names[Math.floor(Math.random()*names.length)], authorid: CONFIG.AI_NAME,
+                color: "#FFEB3B", rot: 1, votes_best: 0, votes_bad: 0
+            };
+            await client.from('jokes').insert([joke]);
+            refreshData();
+        }
+    }
+}
+
 async function forceAIJoke() {
-    console.log("Llamando a la IA mediante Edge Function...");
     showToast("🤖 El Bot está pensando...");
+    const jokeText = await generateGroqJoke();
+    if (jokeText) {
+        const names = ["Alex", "Leo", "Sofi", "Marc", "Eva", "Bruno", "Iris", "Luca"];
+        const joke = {
+            text: jokeText, author: names[Math.floor(Math.random()*names.length)], authorid: CONFIG.AI_NAME,
+            color: "#FFEB3B", rot: 1, votes_best: 0, votes_bad: 0
+        };
+        const { error } = await client.from('jokes').insert([joke]);
+        if (!error) { refreshData(); showToast("✅ ¡Bot ha respondido!"); }
+    } else {
+        showToast("🔴 La IA no responde");
+    }
+}
+
+async function generateGroqJoke() {
     try {
         const memory = app.state.jokes.slice(0, 10).map(j => j.text).join(' | ');
         const { data, error } = await client.functions.invoke('generate-joke', {
             body: { memory: memory }
         });
-
-        if (error) {
-            console.error("Error en Function:", error);
-            showToast("🔴 Error en el servidor del Bot");
-            return;
-        }
-
-        if (data && data.joke) {
-            const names = ["Alex", "Leo", "Sofi", "Marc", "Eva", "Bruno", "Iris", "Luca"];
-            const joke = {
-                text: data.joke, author: names[Math.floor(Math.random()*names.length)], authorid: CONFIG.AI_NAME,
-                color: "#FFEB3B", rot: 1, votes_best: 0, votes_bad: 0
-            };
-            await client.from('jokes').insert([joke]);
-            refreshData();
-            showToast("✅ ¡IA ha respondido!");
-        }
-    } catch(e) {
-        console.error("Fatal AI Error:", e);
-        showToast("🔴 Fallo de conexión con la IA");
-    }
+        if (error) throw error;
+        return data.joke;
+    } catch (e) { console.error("AI Error:", e); return null; }
 }
 
 function getSortedJokes() {
@@ -205,6 +219,16 @@ function updateStats() {
     if (app.dom.humorList) app.dom.humorList.innerHTML = best.map(j => `<li><span>${j.author}</span> <span>🤣 ${j.votes_best}</span></li>`).join('');
 }
 
+function deleteJoke(id) { if (confirm("Borrar?")) client.from('jokes').delete().eq('id', id).then(() => refreshData()); }
+
+function shareJoke(id) {
+    const joke = app.state.jokes.find(j => j.id === id);
+    if(!joke) return;
+    const txt = `"${joke.text}" - ${joke.author} en EL MURO`;
+    if (navigator.share) navigator.share({ title: 'EL MURO', text: txt, url: window.location.href });
+    else window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(txt)}`, '_blank');
+}
+
 function showToast(msg) {
     const t = document.createElement('div'); t.className = 'toast show'; t.innerText = msg;
     const c = document.getElementById('toast-container');
@@ -213,13 +237,9 @@ function showToast(msg) {
 
 function sanitize(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-// INICIALIZACIÓN AL CARGAR
 window.onload = function() {
-    console.log("Iniciando EL MURO V11.6...");
     app.user = loadUser();
     cacheDOM();
-    
-    // Eventos
     app.dom.postBtn.onclick = postJoke;
     if(app.dom.testAiBtn) app.dom.testAiBtn.onclick = forceAIJoke;
     app.dom.filters.forEach(btn => {
@@ -231,10 +251,7 @@ window.onload = function() {
         };
     });
     app.dom.dots.forEach(d => {
-        d.onclick = () => {
-            app.dom.dots.forEach(x => x.classList.remove('active'));
-            d.classList.add('active');
-        };
+        d.onclick = () => { app.dom.dots.forEach(x => x.classList.remove('active')); d.classList.add('active'); };
     });
     app.dom.title.onclick = () => {
         if (++app.adminClicks >= 5) {
@@ -247,8 +264,6 @@ window.onload = function() {
         app.dom.dashboard.setAttribute('aria-hidden', !isHidden);
         app.dom.dashToggle.innerText = isHidden ? "X" : "🏆";
     };
-
     if(app.dom.avatarImg) app.dom.avatarImg.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + app.user.id;
-    
     initGlobalSync();
 };

@@ -21,9 +21,13 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
         messages: [
-          { role: "system", content: "Genera un chiste malo corto en español. No saludes ni expliques nada. Solo el chiste." },
-          { role: "user", content: "Evita estos temas: " + memory }
-        ]
+          { 
+            role: "system", 
+            content: "Eres un humorista español experto en chistes malos y juegos de palabras. Genera un chiste corto que sea gramaticalmente perfecto. No saludes, no expliques el chiste, solo devuelve el texto. Evita traducciones literales del inglés." 
+          },
+          { role: "user", content: "Genera un chiste original. No repitas estos temas: " + memory }
+        ],
+        temperature: 0.7
       })
     })
     
