@@ -1,5 +1,5 @@
 /**
- * EL MURO V11.0 - REPARACION TOTAL
+ * EL MURO V11.4 - FIXES & AI BRIDGE
  */
 
 const SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -16,7 +16,7 @@ const client = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 function genUUID() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        var r = Math.random() * 16 | 0, v = (c == 'x' ? r : (r & 0x3 | 0x8));
         return v.toString(16);
     });
 }
@@ -27,6 +27,7 @@ class App {
         this.user = this.loadUser();
         this.isAdmin = false;
         this.adminClicks = 0;
+        this.isMuted = false;
         this.dom = {}; 
         
         this.cacheDOM();
@@ -65,6 +66,7 @@ class App {
             if (!error && data) {
                 this.state.jokes = data;
                 this.syncWall();
+                this.checkDailyAIJoke();
                 localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(data));
             }
         } catch (e) { console.error(e); }
@@ -96,7 +98,8 @@ class App {
             dashToggle: document.getElementById('mobile-dash-toggle'),
             dashboard: document.getElementById('dashboard'),
             postBtn: document.getElementById('post-btn'),
-            dots: document.querySelectorAll('.dot')
+            dots: document.querySelectorAll('.dot'),
+            testAiBtn: document.getElementById('test-ai-btn')
         };
         if(this.user.alias) this.dom.alias.value = this.user.alias;
     }
@@ -105,10 +108,8 @@ class App {
         const self = this;
         this.dom.postBtn.onclick = () => self.post();
         
-        // BOTÓN TEMPORAL DE PRUEBA IA
-        const testBtn = document.getElementById('test-ai-btn');
-        if(testBtn) {
-            testBtn.onclick = () => self.forceAIJoke();
+        if(this.dom.testAiBtn) {
+            this.dom.testAiBtn.onclick = () => self.forceAIJoke();
         }
 
         this.dom.filters.forEach(btn => {
@@ -119,13 +120,17 @@ class App {
                 this.syncWall(); 
             };
         });
+
         this.dom.dots.forEach(d => {
             d.onclick = () => {
                 this.dom.dots.forEach(x => x.classList.remove('active'));
                 d.classList.add('active');
             };
         });
+
         if(this.dom.title) this.dom.title.onclick = () => this.tryAdminAccess();
+        if(this.dom.muteBtn) this.dom.muteBtn.onclick = () => this.toggleMute();
+        
         if(this.dom.dashToggle) {
             this.dom.dashToggle.onclick = () => {
                 const isHidden = this.dom.dashboard.getAttribute('aria-hidden') === 'true';
@@ -133,6 +138,42 @@ class App {
                 this.dom.dashToggle.innerText = isHidden ? "❌" : "🏆";
             };
         }
+    }
+
+    async forceAIJoke() {
+        this.toast("🤖 El Bot está pensando...");
+        const jokeText = await this.generateGroqJoke();
+        if (jokeText) {
+            const names = ["Alex", "Leo", "Sofi", "Marc", "Eva", "Bruno", "Iris", "Luca"];
+            const name = names[Math.floor(Math.random()*names.length)];
+            const joke = {
+                text: jokeText, author: name, authorid: CONFIG.AI_NAME,
+                color: "#FFEB3B", rot: 1, votes_best: 0, votes_bad: 0
+            };
+            const { error } = await client.from('jokes').insert([joke]);
+            if (!error) {
+                this.refreshData();
+                this.toast("✅ ¡Bot ha posteado!");
+            } else {
+                this.toast("🔴 Error al insertar chiste");
+            }
+        } else {
+            this.toast("🔴 El Bot no responde");
+        }
+    }
+
+    async generateGroqJoke() {
+        try {
+            const memory = this.state.jokes.slice(0, 10).map(j => j.text).join(' | ');
+            const { data, error } = await client.functions.invoke('generate-joke', {
+                body: { memory: memory }
+            });
+            if (error) throw error;
+            return data.joke;
+        } catch (e) { 
+            console.error("AI Error:", e);
+            return null; 
+        } 
     }
 
     getSortedJokes() {
@@ -162,7 +203,7 @@ class App {
         el.style.setProperty('--rot', (joke.rot || 0) + 'deg');
         const isVoted = this.user.voted.includes(joke.id);
         
-        el.innerHTML = '<div class="post-body">' + this.sanitize(joke.text) + '</div>' +
+        el.innerHTML = '<div class="post-body">' + this.sanitize(joke.text) + '</div>' + 
             '<div class="post-footer">' + 
                 '<div class="author-info"><img src="https://api.dicebear.com/7.x/bottts/svg?seed=' + (joke.authorid || joke.author) + '">' + this.sanitize(joke.author) + '</div>' + 
                 '<div class="actions">' + 
@@ -184,8 +225,8 @@ class App {
         try {
             const activeDot = document.querySelector('.dot.active');
             const color = activeDot ? activeDot.dataset.color : '#FFEB3B';
-            const joke = { 
-                text: text, author: alias, authorid: this.user.id, 
+            const joke = {
+                text: text, author: alias, authorid: this.user.id,
                 color: color, rot: parseFloat((Math.random()*4-2).toFixed(1)), 
                 votes_best: 0, votes_bad: 0 
             };
@@ -235,72 +276,30 @@ class App {
         if (navigator.share) await navigator.share({ title: 'EL MURO', text: txt, url: window.location.href });
         else window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(txt), '_blank');
     }
-    async forceAIJoke() {
-        this.toast("🤖 El Bot está pensando...");
-        const jokeText = await this.generateGroqJoke();
-        if (jokeText) {
-            const names = ["Alex", "Leo", "Sofi", "Marc", "Eva", "Bruno", "Iris", "Luca"];
-            const name = names[Math.floor(Math.random()*names.length)];
-            const joke = {
-                text: jokeText, author: name, authorid: CONFIG.AI_NAME,
-                color: "#FFEB3B", rot: 1, votes_best: 0, votes_bad: 0
-            };
-            const { error } = await client.from('jokes').insert([joke]);
-            if (!error) {
-                this.refreshData();
-                this.toast("✅ ¡Bot ha posteado!");
-            } else {
-                console.error("Error insert bot joke:", error);
-                this.toast("🔴 Error en Supabase al insertar.");
-            }
-        } else {
-            this.toast("🔴 El Bot no responde (Revisa Edge Function)");
-        }
-    }
-
-    async checkDailyAIJoke() {
-        const lastAI = this.state.jokes.filter(j => j.authorid === CONFIG.AI_NAME).sort((a,b) => new Date(b.ts) - new Date(a.ts))[0];
-        const now = Date.now();
-        const sixHours = 6 * 60 * 60 * 1000;
-
-        if (!lastAI || (now - new Date(lastAI.ts).getTime() >= sixHours)) {
-            console.log("🤖 Es hora de un nuevo chiste de la IA...");
-            const jokeText = await this.generateGroqJoke();
-            if (jokeText) {
-                const names = ["Alex", "Leo", "Sofi", "Marc", "Eva", "Bruno", "Iris", "Luca"];
-                const name = names[Math.floor(Math.random()*names.length)];
-                const joke = {
-                    text: jokeText, author: name, authorid: CONFIG.AI_NAME,
-                    color: "#FFEB3B", rot: 1, votes_best: 0, votes_bad: 0
-                };
-                await client.from('jokes').insert([joke]);
-                this.refreshData();
-            }
-        }
-    }
-
-    async generateGroqJoke() {
-        try {
-            const memory = this.state.jokes.slice(0, 10).map(j => j.text).join(' | ');
-            
-            // Llamada segura a la Edge Function
-            const { data, error } = await client.functions.invoke('generate-joke', {
-                body: { memory: memory }
-            });
-
-            if (error) throw error;
-            return data.joke;
-        } catch (e) { 
-            console.warn("🤖 IA en espera: Falta configurar la Edge Function en Supabase.");
-            return null; 
-        }
-    }
+    updateAvatarUI() { if(this.dom.avatarImg) this.dom.avatarImg.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + this.user.id; }
     checkPurgeTimer() {
         const el = document.getElementById('purgatory-status');
         if(el) {
             const days = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate();
             el.innerHTML = days <= 3 ? "🔴 PURGA ACTIVA" : 'FIN: ' + days + ' DÍAS';
         }
+    }
+    async checkDailyAIJoke() {
+        const lastAI = this.state.jokes.filter(j => j.authorid === CONFIG.AI_NAME).sort((a,b) => new Date(b.ts) - new Date(a.ts))[0];
+        const now = Date.now();
+        if (!lastAI || (now - new Date(lastAI.ts).getTime() >= 21600000)) {
+            const jokeText = await this.generateGroqJoke();
+            if (jokeText) {
+                await client.from('jokes').insert([{ text: jokeText, author: "Bot", authorid: CONFIG.AI_NAME, color: "#FFEB3B", rot: 1, votes_best: 0, votes_bad: 0 }]);
+                this.refreshData();
+            }
+        }
+    }
+    toggleMute() { this.isMuted = !this.isMuted; this.dom.muteBtn.innerText = this.isMuted ? "🔇" : "🔊"; }
+    toast(msg) {
+        const t = document.createElement('div'); t.className = 'toast show'; t.innerText = msg;
+        const c = document.getElementById('toast-container');
+        if(c) { c.appendChild(t); setTimeout(() => { t.classList.remove('show'); setTimeout(() => { if(t.parentNode) t.remove(); }, 300); }, 2000); }
     }
     sanitize(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 }
