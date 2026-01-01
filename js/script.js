@@ -33,12 +33,21 @@ class App {
         this.initGlobalSync(); 
         this.updateAvatarUI();
         this.checkPurgeTimer();
-    }
-
     loadUser() {
         let u;
         try { u = JSON.parse(localStorage.getItem(CONFIG.USER_KEY)); } catch(e) { u = null; }
-        if (!u || !u.id) u = { id: 'usr-'+Math.random().toString(36).substr(2,9), voted: [], owned: [], alias: '', hasSaved: false };
+        
+        // Generador de UUID simple
+        const genUUID = () => {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        };
+
+        if (!u || !u.id || u.id.startsWith('usr-')) {
+            u = { id: genUUID(), voted: [], owned: [], alias: '', hasSaved: false };
+        }
         return u;
     }
 
