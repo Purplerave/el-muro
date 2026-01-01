@@ -1,5 +1,5 @@
 /**
- * EL MURO V11.5 - CLEAN ARCHITECTURE & AI FIX
+ * EL MURO V11.6 - ESTRUCTURA PLANA & LOGS DE GUERRA
  */
 
 const SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -11,8 +11,16 @@ const CONFIG = {
     AI_NAME: '00000000-0000-0000-0000-000000000000'
 };
 
-const { createClient } = supabase;
-const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// OBJETO GLOBAL PARA EL ESTADO
+window.app = {
+    state: { jokes: [], sort: 'new' },
+    user: null,
+    isAdmin: false,
+    adminClicks: 0,
+    dom: {}
+};
 
 function genUUID() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -21,301 +29,226 @@ function genUUID() {
     });
 }
 
-class App {
-    constructor() {
-        this.state = { jokes: [], sort: 'new' };
-        this.user = this.loadUser();
-        this.isAdmin = false;
-        this.adminClicks = 0;
-        this.isMuted = false;
-        this.dom = {}; 
-        
-        this.cacheDOM();
-        this.initEvents();
-        this.loadLocalJokes();
-        this.initGlobalSync(); 
-        
-        // Ejecución segura de UI inicial
-        if (typeof this.updateAvatarUI === 'function') this.updateAvatarUI();
-        if (typeof this.checkPurgeTimer === 'function') this.checkPurgeTimer();
+function loadUser() {
+    let u;
+    try { u = JSON.parse(localStorage.getItem(CONFIG.USER_KEY)); } catch(e) { u = null; }
+    if (!u || !u.id || u.id.length < 30) {
+        u = { id: genUUID(), voted: [], owned: [], alias: '', hasSaved: false };
+        localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(u));
     }
-
-    loadUser() {
-        let u;
-        try { u = JSON.parse(localStorage.getItem(CONFIG.USER_KEY)); } catch(e) { u = null; }
-        if (!u || !u.id || u.id.length < 30) {
-            u = { id: genUUID(), voted: [], owned: [], alias: '', hasSaved: false };
-            localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(u));
-        }
-        return u;
-    }
-
-    saveUser() { localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(this.user)); }
-
-    loadLocalJokes() {
-        try {
-            const local = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY));
-            if (local && Array.isArray(local)) {
-                this.state.jokes = local;
-                this.syncWall();
-            }
-        } catch(e) {}
-    }
-
-    async initGlobalSync() {
-        try {
-            const { data, error } = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(200);
-            if (!error && data) {
-                this.state.jokes = data;
-                this.syncWall();
-                this.checkDailyAIJoke();
-                localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(data));
-            }
-        } catch (e) { console.error("Sync Error:", e); }
-
-        client.channel('public:jokes').on('postgres_changes', { event: '*', schema: 'public', table: 'jokes' }, () => {
-            this.refreshData();
-        }).subscribe();
-    }
-
-    async refreshData() {
-        const { data } = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(200);
-        if (data) {
-            this.state.jokes = data;
-            this.syncWall();
-        }
-    }
-
-    cacheDOM() {
-        this.dom = {
-            mural: document.getElementById('mural'),
-            input: document.getElementById('secret-input'),
-            alias: document.getElementById('user-alias'),
-            filters: document.querySelectorAll('.filter-btn'),
-            avatarImg: document.getElementById('my-avatar-img'),
-            purgList: document.getElementById('purgatory-list'),
-            humorList: document.getElementById('humorists-list'),
-            title: document.getElementById('title-sign'),
-            muteBtn: document.getElementById('mute-btn'),
-            dashToggle: document.getElementById('mobile-dash-toggle'),
-            dashboard: document.getElementById('dashboard'),
-            postBtn: document.getElementById('post-btn'),
-            dots: document.querySelectorAll('.dot'),
-            testAiBtn: document.getElementById('test-ai-btn')
-        };
-        if(this.user.alias) this.dom.alias.value = this.user.alias;
-    }
-
-    initEvents() {
-        const self = this;
-        if(this.dom.postBtn) this.dom.postBtn.onclick = () => self.post();
-        
-        if(this.dom.testAiBtn) {
-            this.dom.testAiBtn.onclick = () => {
-                console.log("Boton IA pulsado");
-                self.forceAIJoke();
-            };
-        }
-
-        this.dom.filters.forEach(btn => {
-            btn.onclick = () => {
-                self.dom.filters.forEach(f => f.classList.remove('active'));
-                btn.classList.add('active');
-                self.state.sort = btn.dataset.sort;
-                self.syncWall(); 
-            };
-        });
-
-        this.dom.dots.forEach(d => {
-            d.onclick = () => {
-                self.dom.dots.forEach(x => x.classList.remove('active'));
-                d.classList.add('active');
-            };
-        });
-
-        if(this.dom.title) this.dom.title.onclick = () => self.tryAdminAccess();
-        if(this.dom.muteBtn) this.dom.muteBtn.onclick = () => self.toggleMute();
-        
-        if(this.dom.dashToggle) {
-            this.dom.dashToggle.onclick = () => {
-                const isHidden = self.dom.dashboard.getAttribute('aria-hidden') === 'true';
-                self.dom.dashboard.setAttribute('aria-hidden', !isHidden);
-                self.dom.dashToggle.innerText = isHidden ? "❌" : "🏆";
-            };
-        }
-    }
-
-    updateAvatarUI() { 
-        if(this.dom.avatarImg) {
-            this.dom.avatarImg.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + this.user.id; 
-        }
-    }
-
-    async forceAIJoke() {
-        this.toast("🤖 Llamando a la IA...");
-        try {
-            const jokeText = await this.generateGroqJoke();
-            if (jokeText) {
-                const names = ["Alex", "Leo", "Sofi", "Marc", "Eva", "Bruno", "Iris", "Luca"];
-                const name = names[Math.floor(Math.random()*names.length)];
-                const joke = {
-                    text: jokeText, author: name, authorid: CONFIG.AI_NAME,
-                    color: "#FFEB3B", rot: 1, votes_best: 0, votes_bad: 0
-                };
-                const { error } = await client.from('jokes').insert([joke]);
-                if (!error) {
-                    this.refreshData();
-                    this.toast("✅ ¡IA ha respondido!");
-                } else {
-                    this.toast("🔴 Error al guardar chiste IA");
-                }
-            } else {
-                this.toast("🔴 La IA no ha devuelto nada");
-            }
-        } catch(e) {
-            this.toast("🔴 Error de conexión con el Bot");
-        }
-    }
-
-    async generateGroqJoke() {
-        try {
-            const memory = this.state.jokes.slice(0, 10).map(j => j.text).join(' | ');
-            const { data, error } = await client.functions.invoke('generate-joke', {
-                body: { memory: memory }
-            });
-            if (error) throw error;
-            return data.joke;
-        } catch (e) { 
-            console.error("Invoke Error:", e);
-            return null; 
-        }
-    }
-
-    getSortedJokes() {
-        let list = [...this.state.jokes];
-        if (this.state.sort === 'best') return list.sort((a,b) => (b.votes_best || 0) - (a.votes_best || 0));
-        if (this.state.sort === 'controversial') return list.filter(j => (j.votes_bad || 0) > 0).sort((a,b) => (b.votes_bad || 0) - (a.votes_bad || 0)).slice(0, 3);
-        return list.sort((a,b) => new Date(b.ts) - new Date(a.ts));
-    }
-
-    syncWall() {
-        const sorted = this.getSortedJokes();
-        const container = this.dom.mural;
-        if(!container) return;
-        container.innerHTML = '';
-        if (sorted.length === 0) {
-            container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:50px; color:#aaa;"><h2 style="font-family:Bangers; font-size:3rem; color:var(--accent);">VACÍO...</h2></div>';
-        } else {
-            sorted.forEach(j => container.appendChild(this.createCard(j)));
-        }
-        this.updateStats();
-    }
-
-    createCard(joke) {
-        const el = document.createElement('article');
-        el.className = 'post-it';
-        el.style.setProperty('--bg-c', joke.color || '#FFEB3B');
-        el.style.setProperty('--rot', (joke.rot || 0) + 'deg');
-        const isVoted = this.user.voted.includes(joke.id);
-        
-        el.innerHTML = '<div class="post-body">' + this.sanitize(joke.text) + '</div>' +
-            '<div class="post-footer">' + 
-                '<div class="author-info"><img src="https://api.dicebear.com/7.x/bottts/svg?seed=' + (joke.authorid || joke.author) + '">' + this.sanitize(joke.author) + '</div>' + 
-                '<div class="actions">' + 
-                    (this.isAdmin ? '<button class="act-btn" onclick="app.deleteJoke(\"' + joke.id + '\")" style="background:#ff1744; color:#fff;">🗑️</button>' : '') + 
-                    '<button class="act-btn ' + (isVoted?'voted':'') + '" onclick="app.vote(\"' + joke.id + '\", \'best\')">🤣 <span>' + (joke.votes_best || 0) + '</span></button>' + 
-                    '<button class="act-btn ' + (isVoted?'voted':'') + '" onclick="app.vote(\"' + joke.id + '\", \'bad\')">🍅 <span>' + (joke.votes_bad || 0) + '</span></button>' + 
-                    '<button class="act-btn" onclick="app.share(\"' + joke.id + '\")">↗️</button>' + 
-                '</div>' + 
-            '</div>';
-        return el;
-    }
-
-    async post() {
-        const text = this.dom.input.value.trim();
-        const alias = this.dom.alias.value.trim();
-        if (!alias || !text) return this.toast("⚠️ Completa todo");
-        
-        this.dom.postBtn.disabled = true;
-        try {
-            const activeDot = document.querySelector('.dot.active');
-            const color = activeDot ? activeDot.dataset.color : '#FFEB3B';
-            const joke = { 
-                text: text, author: alias, authorid: this.user.id, 
-                color: color, rot: parseFloat((Math.random()*4-2).toFixed(1)), 
-                votes_best: 0, votes_bad: 0 
-            };
-            const { error } = await client.from('jokes').insert([joke]);
-            if (error) throw error;
-            this.dom.input.value = ''; 
-            this.user.alias = alias;
-            this.saveUser();
-            this.refreshData();
-            this.toast("¡Pegado! 🌍");
-        } catch(e) { 
-            console.error("Error:", e.message);
-            this.toast("🔴 Error al publicar: " + e.message); 
-        }
-        this.dom.postBtn.disabled = false;
-    }
-
-    async vote(id, type) {
-        if (this.user.voted.includes(id)) return this.toast("⚠️ Ya has votado");
-        if (this.user.owned.includes(id)) return this.toast("⛔ No puedes votarte a ti mismo.");
-        const joke = this.state.jokes.find(j => j.id === id);
-        if(!joke) return;
-        const field = type === 'best' ? 'votes_best' : 'votes_bad';
-        const { error } = await client.from('jokes').update({ [field]: (joke[field] || 0) + 1 }).eq('id', id);
-        if (!error) { this.user.voted.push(id); this.saveUser(); this.refreshData(); }
-    }
-
-    updateStats() {
-        const worst = this.state.jokes.filter(j => (j.votes_bad || 0) > 0).sort((a,b) => b.votes_bad - a.votes_bad).slice(0, 3);
-        if (this.dom.purgList) this.dom.purgList.innerHTML = worst.length ? worst.map(j => '<li><span>' + j.author + '</span> <span>🍅 ' + j.votes_bad + '</span></li>').join('') : '<li>Vacío</li>';
-        const best = this.state.jokes.filter(j => (j.votes_best || 0) > 0).sort((a,b) => b.votes_best - a.votes_best).slice(0, 5);
-        if (this.dom.humorList) this.dom.humorList.innerHTML = best.map(j => '<li><span>' + j.author + '</span> <span>🤣 ' + j.votes_best + '</span></li>').join('');
-    }
-
-    tryAdminAccess() {
-        if (++this.adminClicks >= 5) {
-            if (prompt("Admin:") === "admin123") { this.isAdmin = true; this.syncWall(); this.toast("⚠️ ADMIN"); }
-            this.adminClicks = 0;
-        }
-    }
-
-    async deleteJoke(id) { if (confirm("¿Borrar?")) await client.from('jokes').delete().eq('id', id); }
-    async share(id) {
-        const joke = this.state.jokes.find(j => j.id === id);
-        if(!joke) return;
-        const txt = '"' + joke.text + '" - ' + joke.author;
-        if (navigator.share) await navigator.share({ title: 'EL MURO', text: txt, url: window.location.href });
-        else window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(txt), '_blank');
-    }
-    checkPurgeTimer() {
-        const el = document.getElementById('purgatory-status');
-        if(el) {
-            const days = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate();
-            el.innerHTML = days <= 3 ? "🔴 PURGA ACTIVA" : 'FIN: ' + days + ' DÍAS';
-        }
-    }
-    async checkDailyAIJoke() {
-        const lastAI = this.state.jokes.filter(j => j.authorid === CONFIG.AI_NAME).sort((a,b) => new Date(b.ts) - new Date(a.ts))[0];
-        const now = Date.now();
-        if (!lastAI || (now - new Date(lastAI.ts).getTime() >= 21600000)) {
-            const jokeText = await this.generateGroqJoke();
-            if (jokeText) {
-                await client.from('jokes').insert([{ text: jokeText, author: "Bot", authorid: CONFIG.AI_NAME, color: "#FFEB3B", rot: 1, votes_best: 0, votes_bad: 0 }]);
-                this.refreshData();
-            }
-        }
-    }
-    toggleMute() { this.isMuted = !this.isMuted; this.dom.muteBtn.innerText = this.isMuted ? "🔇" : "🔊"; }
-    toast(msg) {
-        const t = document.createElement('div'); t.className = 'toast show'; t.innerText = msg;
-        const c = document.getElementById('toast-container');
-        if(c) { c.appendChild(t); setTimeout(() => { t.classList.remove('show'); setTimeout(() => { if(t.parentNode) t.remove(); }, 300); }, 2000); }
-    }
-    sanitize(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+    return u;
 }
 
-window.app = new App();
+function cacheDOM() {
+    app.dom = {
+        mural: document.getElementById('mural'),
+        input: document.getElementById('secret-input'),
+        alias: document.getElementById('user-alias'),
+        filters: document.querySelectorAll('.filter-btn'),
+        avatarImg: document.getElementById('my-avatar-img'),
+        purgList: document.getElementById('purgatory-list'),
+        humorList: document.getElementById('humorists-list'),
+        title: document.getElementById('title-sign'),
+        muteBtn: document.getElementById('mute-btn'),
+        dashToggle: document.getElementById('mobile-dash-toggle'),
+        dashboard: document.getElementById('dashboard'),
+        postBtn: document.getElementById('post-btn'),
+        dots: document.querySelectorAll('.dot'),
+        testAiBtn: document.getElementById('test-ai-btn')
+    };
+    if(app.user.alias) app.dom.alias.value = app.user.alias;
+}
+
+async function initGlobalSync() {
+    console.log("Sincronizando con Supabase...");
+    try {
+        const { data, error } = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(200);
+        if (data) {
+            app.state.jokes = data;
+            syncWall();
+            checkDailyAIJoke();
+            localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(data));
+        }
+    } catch (e) { console.error("Sync Error:", e); }
+
+    client.channel('public:jokes').on('postgres_changes', { event: '*', schema: 'public', table: 'jokes' }, () => {
+        refreshData();
+    }).subscribe();
+}
+
+async function refreshData() {
+    const { data } = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(200);
+    if (data) {
+        app.state.jokes = data;
+        syncWall();
+    }
+}
+
+function syncWall() {
+    const sorted = getSortedJokes();
+    const container = app.dom.mural;
+    if(!container) return;
+    container.innerHTML = '';
+    
+    if (app.state.sort === 'controversial') {
+        const days = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate();
+        const info = document.createElement('div');
+        info.style.cssText = "grid-column:1/-1; background:#1a1a1a; border:2px dashed #ff1744; padding:20px; text-align:center; margin-bottom:20px;";
+        info.innerHTML = `<h2 style="font-family:Bangers; color:#ff1744; font-size:2rem;">💀 MODO PURGA</h2><p style="color:#aaa;">Días para el juicio: ${days}</p>`;
+        container.appendChild(info);
+    }
+
+    if (sorted.length === 0) {
+        container.innerHTML += '<div style="grid-column:1/-1; text-align:center; padding:50px; color:#aaa;"><h2 style="font-family:Bangers; font-size:3rem; color:var(--accent);">VACÍO...</h2></div>';
+    } else {
+        sorted.forEach(j => container.appendChild(createCard(j)));
+    }
+    updateStats();
+}
+
+function createCard(joke) {
+    const el = document.createElement('article');
+    el.className = 'post-it';
+    el.style.setProperty('--bg-c', joke.color || '#FFEB3B');
+    el.style.setProperty('--rot', (joke.rot || 0) + 'deg');
+    const isVoted = app.user.voted.includes(joke.id);
+    
+    el.innerHTML = `<div class="post-body">${sanitize(joke.text)}</div>
+        <div class="post-footer">
+            <div class="author-info"><img src="https://api.dicebear.com/7.x/bottts/svg?seed=${joke.authorid || joke.author}">${sanitize(joke.author)}</div>
+            <div class="actions">
+                ${app.isAdmin ? `<button class="act-btn" onclick="deleteJoke('${joke.id}')" style="background:#ff1744; color:#fff;">🗑️</button>` : ''}
+                <button class="act-btn ${isVoted?'voted':''}" onclick="vote('${joke.id}', 'best')">🤣 <span>${joke.votes_best || 0}</span></button>
+                <button class="act-btn ${isVoted?'voted':''}" onclick="vote('${joke.id}', 'bad')">🍅 <span>${joke.votes_bad || 0}</span></button>
+                <button class="act-btn" onclick="shareJoke('${joke.id}')">↗️</button>
+            </div>
+        </div>`;
+    return el;
+}
+
+async function postJoke() {
+    const text = app.dom.input.value.trim();
+    const alias = app.dom.alias.value.trim();
+    if (!alias || !text) return showToast("⚠️ Completa todo");
+    
+    app.dom.postBtn.disabled = true;
+    try {
+        const activeDot = document.querySelector('.dot.active');
+        const color = activeDot ? activeDot.dataset.color : '#FFEB3B';
+        const joke = { 
+            text: text, author: alias, authorid: app.user.id, 
+            color: color, rot: parseFloat((Math.random()*4-2).toFixed(1)), 
+            votes_best: 0, votes_bad: 0 
+        };
+        const { error } = await client.from('jokes').insert([joke]);
+        if (error) throw error;
+        app.dom.input.value = ''; 
+        app.user.alias = alias;
+        localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(app.user));
+        refreshData();
+        showToast("¡Pegado! 🌍");
+    } catch(e) { showToast("🔴 Error: " + e.message); }
+    app.dom.postBtn.disabled = false;
+}
+
+async function forceAIJoke() {
+    console.log("Llamando a la IA mediante Edge Function...");
+    showToast("🤖 El Bot está pensando...");
+    try {
+        const memory = app.state.jokes.slice(0, 10).map(j => j.text).join(' | ');
+        const { data, error } = await client.functions.invoke('generate-joke', {
+            body: { memory: memory }
+        });
+
+        if (error) {
+            console.error("Error en Function:", error);
+            showToast("🔴 Error en el servidor del Bot");
+            return;
+        }
+
+        if (data && data.joke) {
+            const names = ["Alex", "Leo", "Sofi", "Marc", "Eva", "Bruno", "Iris", "Luca"];
+            const joke = {
+                text: data.joke, author: names[Math.floor(Math.random()*names.length)], authorid: CONFIG.AI_NAME,
+                color: "#FFEB3B", rot: 1, votes_best: 0, votes_bad: 0
+            };
+            await client.from('jokes').insert([joke]);
+            refreshData();
+            showToast("✅ ¡IA ha respondido!");
+        }
+    } catch(e) {
+        console.error("Fatal AI Error:", e);
+        showToast("🔴 Fallo de conexión con la IA");
+    }
+}
+
+function getSortedJokes() {
+    let list = [...app.state.jokes];
+    if (app.state.sort === 'best') return list.sort((a,b) => (b.votes_best || 0) - (a.votes_best || 0));
+    if (app.state.sort === 'controversial') return list.filter(j => (j.votes_bad || 0) > 0).sort((a,b) => (b.votes_bad || 0) - (a.votes_bad || 0)).slice(0, 3);
+    return list.sort((a,b) => new Date(b.ts) - new Date(a.ts));
+}
+
+async function vote(id, type) {
+    if (app.user.voted.includes(id)) return showToast("⚠️ Ya has votado");
+    const joke = app.state.jokes.find(j => j.id === id);
+    if(!joke) return;
+    const field = type === 'best' ? 'votes_best' : 'votes_bad';
+    const { error } = await client.from('jokes').update({ [field]: (joke[field] || 0) + 1 }).eq('id', id);
+    if (!error) { app.user.voted.push(id); localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(app.user)); refreshData(); }
+}
+
+function updateStats() {
+    const worst = app.state.jokes.filter(j => (j.votes_bad || 0) > 0).sort((a,b) => b.votes_bad - a.votes_bad).slice(0, 3);
+    if (app.dom.purgList) app.dom.purgList.innerHTML = worst.length ? worst.map(j => `<li><span>${j.author}</span> <span>🍅 ${j.votes_bad}</span></li>`).join('') : '<li>Vacío</li>';
+    const best = app.state.jokes.filter(j => (j.votes_best || 0) > 0).sort((a,b) => b.votes_best - a.votes_best).slice(0, 5);
+    if (app.dom.humorList) app.dom.humorList.innerHTML = best.map(j => `<li><span>${j.author}</span> <span>🤣 ${j.votes_best}</span></li>`).join('');
+}
+
+function showToast(msg) {
+    const t = document.createElement('div'); t.className = 'toast show'; t.innerText = msg;
+    const c = document.getElementById('toast-container');
+    if(c) { c.appendChild(t); setTimeout(() => { t.classList.remove('show'); setTimeout(() => { if(t.parentNode) t.remove(); }, 300); }, 2500); }
+}
+
+function sanitize(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// INICIALIZACIÓN AL CARGAR
+window.onload = function() {
+    console.log("Iniciando EL MURO V11.6...");
+    app.user = loadUser();
+    cacheDOM();
+    
+    // Eventos
+    app.dom.postBtn.onclick = postJoke;
+    if(app.dom.testAiBtn) app.dom.testAiBtn.onclick = forceAIJoke;
+    app.dom.filters.forEach(btn => {
+        btn.onclick = () => {
+            app.dom.filters.forEach(f => f.classList.remove('active'));
+            btn.classList.add('active');
+            app.state.sort = btn.dataset.sort;
+            syncWall();
+        };
+    });
+    app.dom.dots.forEach(d => {
+        d.onclick = () => {
+            app.dom.dots.forEach(x => x.classList.remove('active'));
+            d.classList.add('active');
+        };
+    });
+    app.dom.title.onclick = () => {
+        if (++app.adminClicks >= 5) {
+            if (prompt("Admin:") === "admin123") { app.isAdmin = true; syncWall(); showToast("⚠️ ADMIN"); }
+            app.adminClicks = 0;
+        }
+    };
+    app.dom.dashToggle.onclick = () => {
+        const isHidden = app.dom.dashboard.getAttribute('aria-hidden') === 'true';
+        app.dom.dashboard.setAttribute('aria-hidden', !isHidden);
+        app.dom.dashToggle.innerText = isHidden ? "X" : "🏆";
+    };
+
+    if(app.dom.avatarImg) app.dom.avatarImg.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + app.user.id;
+    
+    initGlobalSync();
+};
