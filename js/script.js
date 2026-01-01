@@ -185,11 +185,28 @@ function getSortedJokes() {
 
 async function vote(id, type) {
     if (app.user.voted.includes(id)) return showToast("⚠️ Ya has votado");
+    
+    // Buscar el chiste en el estado local
     const joke = app.state.jokes.find(j => j.id === id);
     if(!joke) return;
+
+    // Bloqueo de auto-voto
+    if (app.user.owned.includes(id)) return showToast("⛔ No puedes votarte a ti mismo.");
+
     const field = type === 'best' ? 'votes_best' : 'votes_bad';
-    const { error } = await client.from('jokes').update({ [field]: (joke[field] || 0) + 1 }).eq('id', id);
-    if (!error) { app.user.voted.push(id); localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(app.user)); refreshData(); }
+    try {
+        const { error } = await client.from('jokes').update({ [field]: (joke[field] || 0) + 1 }).eq('id', id);
+        if (error) throw error;
+
+        // Éxito: Guardar voto localmente
+        app.user.voted.push(id);
+        localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(app.user));
+        refreshData();
+        showToast("¡Voto registrado!");
+    } catch(err) {
+        console.error("Vote Error:", err.message);
+        showToast("🔴 Fallo al votar: Revisa tu conexión");
+    }
 }
 
 function updateStats() {
