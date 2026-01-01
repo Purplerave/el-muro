@@ -1,5 +1,5 @@
 /**
- * EL MURO V11.7 - AUTO AI ENGINE & SYNC FIX
+ * EL MURO V12.0 - FINAL PRODUCTION VERSION
  */
 
 const SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -52,8 +52,7 @@ function cacheDOM() {
         dashToggle: document.getElementById('mobile-dash-toggle'),
         dashboard: document.getElementById('dashboard'),
         postBtn: document.getElementById('post-btn'),
-        dots: document.querySelectorAll('.dot'),
-        testAiBtn: document.getElementById('test-ai-btn')
+        dots: document.querySelectorAll('.dot')
     };
     if(app.user.alias) app.dom.alias.value = app.user.alias;
 }
@@ -64,10 +63,10 @@ async function initGlobalSync() {
         if (data) {
             app.state.jokes = data;
             syncWall();
-            checkDailyAIJoke(); // El sistema automático despierta aquí
+            checkDailyAIJoke(); // Ciclo automático activo
             localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(data));
         }
-    } catch (e) { console.error("Sync Error:", e); }
+    } catch (e) {}
 
     client.channel('public:jokes').on('postgres_changes', { event: '*', schema: 'public', table: 'jokes' }, () => {
         refreshData();
@@ -145,7 +144,7 @@ async function postJoke() {
         localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(app.user));
         refreshData();
         showToast("¡Pegado! 🌍");
-    } catch(e) { showToast("🔴 Error: " + e.message); }
+    } catch(e) { showToast("🔴 Error al publicar"); }
     app.dom.postBtn.disabled = false;
 }
 
@@ -155,7 +154,6 @@ async function checkDailyAIJoke() {
     const sixHours = 6 * 60 * 60 * 1000;
 
     if (!lastAI || (now - new Date(lastAI.ts).getTime() >= sixHours)) {
-        console.log("🤖 Es hora de un nuevo chiste de la IA (Automático)");
         const jokeText = await generateGroqJoke();
         if (jokeText) {
             const names = ["Alex", "Leo", "Sofi", "Marc", "Eva", "Bruno", "Iris", "Luca"];
@@ -169,31 +167,13 @@ async function checkDailyAIJoke() {
     }
 }
 
-async function forceAIJoke() {
-    showToast("🤖 El Bot está pensando...");
-    const jokeText = await generateGroqJoke();
-    if (jokeText) {
-        const names = ["Alex", "Leo", "Sofi", "Marc", "Eva", "Bruno", "Iris", "Luca"];
-        const joke = {
-            text: jokeText, author: names[Math.floor(Math.random()*names.length)], authorid: CONFIG.AI_NAME,
-            color: "#FFEB3B", rot: 1, votes_best: 0, votes_bad: 0
-        };
-        const { error } = await client.from('jokes').insert([joke]);
-        if (!error) { refreshData(); showToast("✅ ¡Bot ha respondido!"); }
-    } else {
-        showToast("🔴 La IA no responde");
-    }
-}
-
 async function generateGroqJoke() {
     try {
         const memory = app.state.jokes.slice(0, 10).map(j => j.text).join(' | ');
-        const { data, error } = await client.functions.invoke('generate-joke', {
-            body: { memory: memory }
-        });
+        const { data, error } = await client.functions.invoke('generate-joke', { body: { memory: memory } });
         if (error) throw error;
         return data.joke;
-    } catch (e) { console.error("AI Error:", e); return null; }
+    } catch (e) { return null; }
 }
 
 function getSortedJokes() {
@@ -241,7 +221,6 @@ window.onload = function() {
     app.user = loadUser();
     cacheDOM();
     app.dom.postBtn.onclick = postJoke;
-    if(app.dom.testAiBtn) app.dom.testAiBtn.onclick = forceAIJoke;
     app.dom.filters.forEach(btn => {
         btn.onclick = () => {
             app.dom.filters.forEach(f => f.classList.remove('active'));
