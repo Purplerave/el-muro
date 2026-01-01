@@ -84,8 +84,7 @@ function freezeOrder() {
         app.displayOrder = list.sort((a,b) => (b.votes_best || 0) - (a.votes_best || 0));
     } else if (app.state.sort === 'controversial') {
         app.displayOrder = list.filter(j => {
-            const ageDays = (Date.now() - new Date(j.ts).getTime()) / 86400000;
-            return (j.votes_bad || 0) > (j.votes_best || 0) && ageDays > 7; // PURGA JUSTA (7 días de gracia)
+            return (j.votes_bad || 0) > (j.votes_best || 0); // PURGA DIRECTA: Más tomates que risas = Peligro
         }).sort((a,b) => (b.votes_bad - b.votes_best) - (a.votes_bad - a.votes_best)).slice(0, 3);
     } else {
         app.displayOrder = list.sort((a,b) => new Date(b.ts) - new Date(a.ts));
