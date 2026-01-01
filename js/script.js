@@ -102,7 +102,15 @@ class App {
     }
 
     initEvents() {
-        this.dom.postBtn.onclick = () => this.post();
+        const self = this;
+        this.dom.postBtn.onclick = () => self.post();
+        
+        // BOTÓN TEMPORAL DE PRUEBA IA
+        const testBtn = document.getElementById('test-ai-btn');
+        if(testBtn) {
+            testBtn.onclick = () => self.forceAIJoke();
+        }
+
         this.dom.filters.forEach(btn => {
             btn.onclick = () => {
                 this.dom.filters.forEach(f => f.classList.remove('active'));
@@ -227,6 +235,29 @@ class App {
         if (navigator.share) await navigator.share({ title: 'EL MURO', text: txt, url: window.location.href });
         else window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(txt), '_blank');
     }
+    async forceAIJoke() {
+        this.toast("🤖 El Bot está pensando...");
+        const jokeText = await this.generateGroqJoke();
+        if (jokeText) {
+            const names = ["Alex", "Leo", "Sofi", "Marc", "Eva", "Bruno", "Iris", "Luca"];
+            const name = names[Math.floor(Math.random()*names.length)];
+            const joke = {
+                text: jokeText, author: name, authorid: CONFIG.AI_NAME,
+                color: "#FFEB3B", rot: 1, votes_best: 0, votes_bad: 0
+            };
+            const { error } = await client.from('jokes').insert([joke]);
+            if (!error) {
+                this.refreshData();
+                this.toast("✅ ¡Bot ha posteado!");
+            } else {
+                console.error("Error insert bot joke:", error);
+                this.toast("🔴 Error en Supabase al insertar.");
+            }
+        } else {
+            this.toast("🔴 El Bot no responde (Revisa Edge Function)");
+        }
+    }
+
     async checkDailyAIJoke() {
         const lastAI = this.state.jokes.filter(j => j.authorid === CONFIG.AI_NAME).sort((a,b) => new Date(b.ts) - new Date(a.ts))[0];
         const now = Date.now();
