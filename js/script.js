@@ -226,7 +226,6 @@ class App {
         const text = this.dom.input.value.trim();
         const alias = this.dom.alias.value.trim();
         
-        // Solo validamos que no estén vacíos, sin filtros "raros"
         if (!alias || !text) return this.toast("⚠️ Escribe algo...");
         
         this.setLoading(true);
@@ -243,9 +242,7 @@ class App {
             const { data, error } = await client.from('jokes').insert([joke]).select();
             
             if (error) {
-                console.error("Error DB:", error);
-                // Si hay error de duplicado en DB, avisamos, si no, simplemente posteamos
-                if (error.code === '23505') return this.toast("🚫 Ese ya está.");
+                if (error.code === '23505') return this.toast("🚫 Ese chiste ya existe.");
                 throw error;
             }
             
@@ -255,7 +252,8 @@ class App {
             this.refreshData();
             this.toast("¡Pegado! 🌍");
         } catch(e) { 
-            this.toast("🔴 Revisa la conexión"); 
+            console.error("Post Error:", e);
+            this.toast("🔴 Error al publicar chiste."); 
         }
         this.setLoading(false);
     }
