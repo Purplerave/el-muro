@@ -227,7 +227,43 @@ class App {
         if (navigator.share) await navigator.share({ title: 'EL MURO', text: txt, url: window.location.href });
         else window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(txt), '_blank');
     }
-    updateAvatarUI() { if(this.dom.avatarImg) this.dom.avatarImg.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + this.user.id; }
+    async checkDailyAIJoke() {
+        const lastAI = this.state.jokes.filter(j => j.authorid === CONFIG.AI_NAME).sort((a,b) => new Date(b.ts) - new Date(a.ts))[0];
+        const now = Date.now();
+        const sixHours = 6 * 60 * 60 * 1000;
+
+        if (!lastAI || (now - new Date(lastAI.ts).getTime() >= sixHours)) {
+            console.log("🤖 Es hora de un nuevo chiste de la IA...");
+            const jokeText = await this.generateGroqJoke();
+            if (jokeText) {
+                const names = ["Alex", "Leo", "Sofi", "Marc", "Eva", "Bruno", "Iris", "Luca"];
+                const name = names[Math.floor(Math.random()*names.length)];
+                const joke = {
+                    text: jokeText, author: name, authorid: CONFIG.AI_NAME,
+                    color: "#FFEB3B", rot: 1, votes_best: 0, votes_bad: 0
+                };
+                await client.from('jokes').insert([joke]);
+                this.refreshData();
+            }
+        }
+    }
+
+    async generateGroqJoke() {
+        try {
+            const memory = this.state.jokes.slice(0, 10).map(j => j.text).join(' | ');
+            
+            // Llamada segura a la Edge Function
+            const { data, error } = await client.functions.invoke('generate-joke', {
+                body: { memory: memory }
+            });
+
+            if (error) throw error;
+            return data.joke;
+        } catch (e) { 
+            console.warn("🤖 IA en espera: Falta configurar la Edge Function en Supabase.");
+            return null; 
+        }
+    }
     checkPurgeTimer() {
         const el = document.getElementById('purgatory-status');
         if(el) {
