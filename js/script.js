@@ -1,5 +1,6 @@
 /**
- * EL MURO V12.0 - FINAL PRODUCTION VERSION
+ * EL MURO V12.2 - THE SURVIVAL RULE (CEO APPROVED)
+ * Immortality by popularity | Auto-Purge | Salvation Button
  */
 
 const SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -62,8 +63,16 @@ async function initGlobalSync() {
         const { data, error } = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(200);
         if (data) {
             app.state.jokes = data;
+            
+            // MECÁNICA DE PURGA REAL (Día 1 del mes)
+            const now = new Date();
+            if (now.getDate() === 1) {
+                console.log("¡Día de juicio! Ejecutando limpieza...");
+                executePurge();
+            }
+
             syncWall();
-            checkDailyAIJoke(); // Ciclo automático activo
+            checkDailyAIJoke();
             localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(data));
         }
     } catch (e) {}
@@ -71,6 +80,20 @@ async function initGlobalSync() {
     client.channel('public:jokes').on('postgres_changes', { event: '*', schema: 'public', table: 'jokes' }, () => {
         refreshData();
     }).subscribe();
+}
+
+async function executePurge() {
+    // Solo el primer usuario que entre el día 1 dispara esto
+    // Borramos los 3 chistes que tienen más tomates que risas
+    const targets = app.state.jokes
+        .filter(j => (j.votes_bad || 0) > (j.votes_best || 0))
+        .sort((a,b) => (b.votes_bad - b.votes_best) - (a.votes_bad - a.votes_best))
+        .slice(0, 3);
+    
+    for (let joke of targets) {
+        await client.from('jokes').delete().eq('id', joke.id);
+    }
+    if (targets.length > 0) refreshData();
 }
 
 async function refreshData() {
@@ -88,19 +111,26 @@ function syncWall() {
     container.innerHTML = '';
     
     if (app.state.sort === 'controversial') {
+        const active = isPurgeActive();
         const days = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate();
         const info = document.createElement('div');
         info.style.cssText = "grid-column:1/-1; background:#1a1a1a; border:2px dashed #ff1744; padding:20px; text-align:center; margin-bottom:20px;";
-        info.innerHTML = `<h2 style="font-family:Bangers; color:#ff1744; font-size:2rem;">💀 MODO PURGA</h2><p style="color:#aaa;">Días para el juicio: ${days}</p>`;
+        info.innerHTML = `<h2 style="font-family:Bangers; color:#ff1744; font-size:2rem;">💀 MODO PURGA</h2><p style="color:#aaa;">${active ? "¡JUICIO FINAL! Salva a uno antes de que termine el mes." : "Candidatos a ser borrados en "+days+" días."}</p><p style="font-size:0.7rem; margin-top:5px; opacity:0.6;">(Solo aparecen si tienen más tomates que risas)</p>`;
         container.appendChild(info);
     }
 
     if (sorted.length === 0) {
-        container.innerHTML += '<div style="grid-column:1/-1; text-align:center; padding:50px; color:#aaa;"><h2 style="font-family:Bangers; font-size:3rem; color:var(--accent);">VACÍO...</h2></div>';
+        container.innerHTML += '<div style="grid-column:1/-1; text-align:center; padding:50px; color:#aaa;"><h2 style="font-family:Bangers; font-size:3rem; color:var(--accent);">LIBRE DE PELIGRO</h2></div>';
     } else {
         sorted.forEach(j => container.appendChild(createCard(j)));
     }
     updateStats();
+}
+
+function isPurgeActive() {
+    const now = new Date();
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    return (lastDay - now.getDate()) <= 3;
 }
 
 function createCard(joke) {
@@ -109,14 +139,25 @@ function createCard(joke) {
     el.style.setProperty('--bg-c', joke.color || '#FFEB3B');
     el.style.setProperty('--rot', (joke.rot || 0) + 'deg');
     const isVoted = app.user.voted.includes(joke.id);
+    const purgeActive = isPurgeActive();
+    const isCondemned = (joke.votes_bad || 0) > (joke.votes_best || 0);
     
+    let actionsHTML = '';
+    if (app.state.sort === 'controversial' && purgeActive && isCondemned) {
+        // MODO SALVACIÓN
+        actionsHTML = `<button class="act-btn ${app.user.hasSaved?'voted':''}" onclick="vote('${joke.id}', 'save')" style="background:var(--accent); color:#000;">💖 SALVAR</button>`;
+    } else {
+        // MODO NORMAL
+        actionsHTML = `<button class="act-btn ${isVoted?'voted':''}" onclick="vote('${joke.id}', 'best')">🤣 <span>${joke.votes_best || 0}</span></button>
+                       <button class="act-btn ${isVoted?'voted':''}" onclick="vote('${joke.id}', 'bad')">🍅 <span>${joke.votes_bad || 0}</span></button>`;
+    }
+
     el.innerHTML = `<div class="post-body">${sanitize(joke.text)}</div>
         <div class="post-footer">
             <div class="author-info"><img src="https://api.dicebear.com/7.x/bottts/svg?seed=${joke.authorid || joke.author}">${sanitize(joke.author)}</div>
             <div class="actions">
                 ${app.isAdmin ? `<button class="act-btn" onclick="deleteJoke('${joke.id}')" style="background:#ff1744; color:#fff;">🗑️</button>` : ''}
-                <button class="act-btn ${isVoted?'voted':''}" onclick="vote('${joke.id}', 'best')">🤣 <span>${joke.votes_best || 0}</span></button>
-                <button class="act-btn ${isVoted?'voted':''}" onclick="vote('${joke.id}', 'bad')">🍅 <span>${joke.votes_bad || 0}</span></button>
+                ${actionsHTML}
                 <button class="act-btn" onclick="shareJoke('${joke.id}')">↗️</button>
             </div>
         </div>`;
@@ -127,20 +168,14 @@ async function postJoke() {
     const text = app.dom.input.value.trim();
     const alias = app.dom.alias.value.trim();
     if (!alias || !text) return showToast("⚠️ Completa todo");
-    
     app.dom.postBtn.disabled = true;
     try {
-        const activeDot = document.querySelector('.dot.active');
-        const color = activeDot ? activeDot.dataset.color : '#FFEB3B';
-        const joke = { 
-            text: text, author: alias, authorid: app.user.id, 
-            color: color, rot: parseFloat((Math.random()*4-2).toFixed(1)), 
-            votes_best: 0, votes_bad: 0 
-        };
-        const { error } = await client.from('jokes').insert([joke]);
+        const joke = { text, author: alias, authorid: app.user.id, color: document.querySelector('.dot.active').dataset.color, rot: parseFloat((Math.random()*4-2).toFixed(1)), votes_best: 0, votes_bad: 0 };
+        const { data, error } = await client.from('jokes').insert([joke]).select();
         if (error) throw error;
         app.dom.input.value = ''; 
         app.user.alias = alias;
+        app.user.owned.push(data[0].id); // Bloqueo instantáneo de auto-voto
         localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(app.user));
         refreshData();
         showToast("¡Pegado! 🌍");
@@ -148,76 +183,51 @@ async function postJoke() {
     app.dom.postBtn.disabled = false;
 }
 
-async function checkDailyAIJoke() {
-    const lastAI = app.state.jokes.filter(j => j.authorid === CONFIG.AI_NAME).sort((a,b) => new Date(b.ts) - new Date(a.ts))[0];
-    const now = Date.now();
-    const sixHours = 6 * 60 * 60 * 1000;
-
-    if (!lastAI || (now - new Date(lastAI.ts).getTime() >= sixHours)) {
-        const jokeText = await generateGroqJoke();
-        if (jokeText) {
-            const names = ["Alex", "Leo", "Sofi", "Marc", "Eva", "Bruno", "Iris", "Luca"];
-            const joke = {
-                text: jokeText, author: names[Math.floor(Math.random()*names.length)], authorid: CONFIG.AI_NAME,
-                color: "#FFEB3B", rot: 1, votes_best: 0, votes_bad: 0
-            };
-            await client.from('jokes').insert([joke]);
-            refreshData();
-        }
-    }
-}
-
-async function generateGroqJoke() {
-    try {
-        const memory = app.state.jokes.slice(0, 10).map(j => j.text).join(' | ');
-        const { data, error } = await client.functions.invoke('generate-joke', { body: { memory: memory } });
-        if (error) throw error;
-        return data.joke;
-    } catch (e) { return null; }
-}
-
 function getSortedJokes() {
     let list = [...app.state.jokes];
     if (app.state.sort === 'best') return list.sort((a,b) => (b.votes_best || 0) - (a.votes_best || 0));
-    if (app.state.sort === 'controversial') return list.filter(j => (j.votes_bad || 0) > 0).sort((a,b) => (b.votes_bad || 0) - (a.votes_bad || 0)).slice(0, 3);
+    if (app.state.sort === 'controversial') {
+        // FILTRO DE SUPERVIVENCIA: Solo los que tienen más tomates que risas
+        return list.filter(j => (j.votes_bad || 0) > (j.votes_best || 0))
+                   .sort((a,b) => (b.votes_bad - b.votes_best) - (a.votes_bad - a.votes_best))
+                   .slice(0, 3);
+    }
     return list.sort((a,b) => new Date(b.ts) - new Date(a.ts));
 }
 
 async function vote(id, type) {
-    if (app.user.voted.includes(id)) return showToast("⚠️ Ya has votado");
-    
-    // Buscar el chiste en el estado local
+    if (type === 'save') {
+        if (app.user.hasSaved) return showToast("⚠️ Ya has usado tu salvación.");
+        type = 'best'; // Sumamos a risas para equilibrar el balance
+        app.user.hasSaved = true;
+    } else {
+        if (app.user.voted.includes(id)) return showToast("⚠️ Ya has votado");
+        if (app.user.owned.includes(id)) return showToast("⛔ No puedes votarte a ti mismo.");
+    }
+
     const joke = app.state.jokes.find(j => j.id === id);
     if(!joke) return;
-
-    // Bloqueo de auto-voto
-    if (app.user.owned.includes(id)) return showToast("⛔ No puedes votarte a ti mismo.");
 
     const field = type === 'best' ? 'votes_best' : 'votes_bad';
     try {
         const { error } = await client.from('jokes').update({ [field]: (joke[field] || 0) + 1 }).eq('id', id);
         if (error) throw error;
-
-        // Éxito: Guardar voto localmente
-        app.user.voted.push(id);
+        if (type !== 'best' || !app.user.hasSaved) app.user.voted.push(id);
         localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(app.user));
         refreshData();
-        showToast("¡Voto registrado!");
-    } catch(err) {
-        console.error("Vote Error:", err.message);
-        showToast("🔴 Fallo al votar: Revisa tu conexión");
-    }
+        showToast(app.user.hasSaved && type === 'best' ? "💖 ¡Salvado!" : "¡Voto registrado!");
+    } catch(e) { showToast("🔴 Fallo al votar"); }
 }
 
 function updateStats() {
-    const worst = app.state.jokes.filter(j => (j.votes_bad || 0) > 0).sort((a,b) => b.votes_bad - a.votes_bad).slice(0, 3);
-    if (app.dom.purgList) app.dom.purgList.innerHTML = worst.length ? worst.map(j => `<li><span>${j.author}</span> <span>🍅 ${j.votes_bad}</span></li>`).join('') : '<li>Vacío</li>';
+    // Candidatos reales a la purga (más tomates que risas)
+    const worst = app.state.jokes.filter(j => (j.votes_bad || 0) > (j.votes_best || 0)).sort((a,b) => (b.votes_bad - b.votes_best) - (a.votes_bad - a.votes_best)).slice(0, 3);
+    if (app.dom.purgList) app.dom.purgList.innerHTML = worst.length ? worst.map(j => `<li><span>${j.author}</span> <span style="color:#ff1744">🍅 ${j.votes_bad}</span></li>`).join('') : '<li>Nadie en peligro</li>';
     const best = app.state.jokes.filter(j => (j.votes_best || 0) > 0).sort((a,b) => b.votes_best - a.votes_best).slice(0, 5);
     if (app.dom.humorList) app.dom.humorList.innerHTML = best.map(j => `<li><span>${j.author}</span> <span>🤣 ${j.votes_best}</span></li>`).join('');
 }
 
 function deleteJoke(id) { if (confirm("Borrar?")) client.from('jokes').delete().eq('id', id).then(() => refreshData()); }
-
 function shareJoke(id) {
     const joke = app.state.jokes.find(j => j.id === id);
     if(!joke) return;
@@ -225,14 +235,27 @@ function shareJoke(id) {
     if (navigator.share) navigator.share({ title: 'EL MURO', text: txt, url: window.location.href });
     else window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(txt)}`, '_blank');
 }
-
 function showToast(msg) {
     const t = document.createElement('div'); t.className = 'toast show'; t.innerText = msg;
     const c = document.getElementById('toast-container');
     if(c) { c.appendChild(t); setTimeout(() => { t.classList.remove('show'); setTimeout(() => { if(t.parentNode) t.remove(); }, 300); }, 2500); }
 }
-
 function sanitize(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+async function checkDailyAIJoke() {
+    const lastAI = app.state.jokes.filter(j => j.authorid === CONFIG.AI_NAME).sort((a,b) => new Date(b.ts) - new Date(a.ts))[0];
+    const now = Date.now();
+    if (!lastAI || (now - new Date(lastAI.ts).getTime() >= 21600000)) {
+        try {
+            const memory = app.state.jokes.slice(0, 10).map(j => j.text).join(' | ');
+            const { data } = await client.functions.invoke('generate-joke', { body: { memory } });
+            if (data && data.joke) {
+                await client.from('jokes').insert([{ text: data.joke, author: "IA", authorid: CONFIG.AI_NAME, color: "#FFEB3B", rot: 1, votes_best: 0, votes_bad: 0 }]);
+                refreshData();
+            }
+        } catch(e) {}
+    }
+}
 
 window.onload = function() {
     app.user = loadUser();
