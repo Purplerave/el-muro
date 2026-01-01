@@ -1,5 +1,5 @@
 /**
- * EL MURO V10.0 - ESTABILIDAD TOTAL (CEO APPROVED)
+ * EL MURO V10.1 - COMPATIBILITY & FIX
  */
 
 const SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -33,12 +33,18 @@ class App {
 
     loadUser() {
         let u;
-        try { u = JSON.parse(localStorage.getItem(CONFIG.USER_KEY)); } catch(e) { u = null; }
+        try { 
+            u = JSON.parse(localStorage.getItem(CONFIG.USER_KEY)); 
+        } catch(e) { 
+            u = null; 
+        }
         
-        const genUUID = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-            const r = Math.random() * 16 | 0;
-            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-        });
+        function genUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
 
         if (!u || !u.id || u.id.length < 20) {
             u = { id: genUUID(), voted: [], owned: [], alias: '', hasSaved: false };
@@ -47,7 +53,9 @@ class App {
         return u;
     }
 
-    saveUser() { localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(this.user)); }
+    saveUser() { 
+        localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(this.user)); 
+    }
 
     loadLocalJokes() {
         try {
@@ -103,28 +111,29 @@ class App {
     }
 
     initEvents() {
-        this.dom.postBtn.onclick = () => this.post();
-        this.dom.filters.forEach(btn => {
-            btn.onclick = () => {
-                this.dom.filters.forEach(f => f.classList.remove('active'));
+        const self = this;
+        this.dom.postBtn.onclick = function() { self.post(); };
+        this.dom.filters.forEach(function(btn) {
+            btn.onclick = function() {
+                self.dom.filters.forEach(function(f) { f.classList.remove('active'); });
                 btn.classList.add('active');
-                this.state.sort = btn.dataset.sort;
-                this.syncWall(); 
+                self.state.sort = btn.dataset.sort;
+                self.syncWall(); 
             };
         });
-        this.dom.dots.forEach(d => {
-            d.onclick = () => {
-                this.dom.dots.forEach(x => x.classList.remove('active'));
+        this.dom.dots.forEach(function(d) {
+            d.onclick = function() {
+                self.dom.dots.forEach(function(x) { x.classList.remove('active'); });
                 d.classList.add('active');
             };
         });
-        if(this.dom.title) this.dom.title.onclick = () => this.tryAdminAccess();
-        if(this.dom.muteBtn) this.dom.muteBtn.onclick = () => this.toggleMute();
+        if(this.dom.title) this.dom.title.onclick = function() { self.tryAdminAccess(); };
+        if(this.dom.muteBtn) this.dom.muteBtn.onclick = function() { self.toggleMute(); };
         if(this.dom.dashToggle) {
-            this.dom.dashToggle.onclick = () => {
-                const isHidden = this.dom.dashboard.getAttribute('aria-hidden') === 'true';
-                this.dom.dashboard.setAttribute('aria-hidden', !isHidden);
-                this.dom.dashToggle.innerText = isHidden ? "❌" : "🏆";
+            this.dom.dashToggle.onclick = function() {
+                const isHidden = self.dom.dashboard.getAttribute('aria-hidden') === 'true';
+                self.dom.dashboard.setAttribute('aria-hidden', !isHidden);
+                self.dom.dashToggle.innerText = isHidden ? "❌" : "🏆";
             };
         }
     }
@@ -147,14 +156,15 @@ class App {
             const days = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate();
             const info = document.createElement('div');
             info.style.cssText = "grid-column:1/-1; background:#1a1a1a; border:2px dashed #ff1744; padding:20px; text-align:center; margin-bottom:20px;";
-            info.innerHTML = `<h2 style="font-family:'Bangers'; color:#ff1744; font-size:2rem;">💀 MODO PURGA</h2><p style="color:#aaa;">Días para el juicio: ${days}</p>`;
+            info.innerHTML = '<h2 style="font-family:\'Bangers\'; color:#ff1744; font-size:2rem;">💀 MODO PURGA</h2><p style="color:#aaa;">Días para el juicio: '+days+'</p>';
             container.appendChild(info);
         }
 
         if (sorted.length === 0) {
-            container.innerHTML += `<div style="grid-column:1/-1; text-align:center; padding:50px; color:#aaa;"><h2 style="font-family:'Bangers'; font-size:3rem; color:var(--accent);">VACÍO...</h2></div>`;
+            container.innerHTML += '<div style="grid-column:1/-1; text-align:center; padding:50px; color:#aaa;"><h2 style="font-family:\'Bangers\'; font-size:3rem; color:var(--accent);">VACÍO...</h2></div>';
         } else {
-            sorted.forEach(j => container.appendChild(this.createCard(j)));
+            const self = this;
+            sorted.forEach(function(j) { container.appendChild(self.createCard(j)); });
         }
         this.updateStats();
     }
@@ -163,12 +173,12 @@ class App {
         const el = document.createElement('article');
         el.className = 'post-it';
         el.style.setProperty('--bg-c', joke.color || '#FFEB3B');
-        el.style.setProperty('--rot', `${joke.rot || 0}deg`);
+        el.style.setProperty('--rot', (joke.rot || 0) + 'deg');
         const isVoted = this.user.voted.includes(joke.id);
         
-        el.innerHTML = `
-            <div class="post-body">${this.sanitize(joke.text)}</div>
-            <div class="post-footer">
+        el.innerHTML = "` +
+            `<div class="post-body">${this.sanitize(joke.text)}</div>` +
+            `<div class="post-footer">
                 <div class="author-info"><img src="https://api.dicebear.com/7.x/bottts/svg?seed=${joke.authorid || joke.author}">${this.sanitize(joke.author)}</div>
                 <div class="actions">
                     ${this.isAdmin ? `<button class="act-btn" onclick="app.deleteJoke('${joke.id}')" style="background:#ff1744; color:#fff;">🗑️</button>` : ''}
@@ -188,7 +198,7 @@ class App {
         this.setLoading(true);
         try {
             const joke = { 
-                text, author: alias, authorid: this.user.id, 
+                text: text, author: alias, authorid: this.user.id, 
                 color: document.querySelector('.dot.active').dataset.color, 
                 rot: parseFloat((Math.random()*4-2).toFixed(1)), 
                 votes_best: 0, votes_bad: 0 
@@ -209,7 +219,7 @@ class App {
 
     setLoading(loading) {
         this.dom.postBtn.disabled = loading;
-        this.dom.postBtn.innerHTML = loading ? `...` : "PEGAR";
+        this.dom.postBtn.innerHTML = loading ? "..." : "PEGAR";
     }
 
     async vote(id, type) {
@@ -237,19 +247,22 @@ class App {
 
     tryAdminAccess() {
         if (++this.adminClicks >= 5) {
-            if (prompt("Admin:") === "admin123") { this.isAdmin = true; this.syncWall(); this.toast("⚠️ ADMIN"); }
+            const p = prompt("Admin:");
+            if (p === "admin123") { this.isAdmin = true; this.syncWall(); this.toast("⚠️ ADMIN"); }
             this.adminClicks = 0;
         }
     }
 
     async deleteJoke(id) { if (confirm("¿Borrar?")) await client.from('jokes').delete().eq('id', id); }
+    
     async share(id) {
         const joke = this.state.jokes.find(j => j.id === id);
         if(!joke) return;
-        const txt = `"${joke.text}" - ${joke.author} en EL MURO`;
+        const txt = '"' + joke.text + '" - ' + joke.author + ' en EL MURO';
         if (navigator.share) await navigator.share({ title: 'EL MURO', text: txt, url: window.location.href });
-        else window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(txt)}`, '_blank');
+        else window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(txt), '_blank');
     }
+
     async checkDailyAIJoke() {
         const lastAI = this.state.jokes.filter(j => j.authorid === CONFIG.AI_NAME).sort((a,b) => new Date(b.ts) - new Date(a.ts))[0];
         if (!lastAI || (Date.now() - new Date(lastAI.ts).getTime() >= 21600000)) {
@@ -263,21 +276,33 @@ class App {
             } catch(e) {}
         }
     }
-    updateAvatarUI() { if(this.dom.avatarImg) this.dom.avatarImg.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${this.user.id}`; }
+
+    updateAvatarUI() { if(this.dom.avatarImg) this.dom.avatarImg.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + this.user.id; }
+    
     checkPurgeTimer() {
         const el = document.getElementById('purgatory-status');
         if(el) {
             const days = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate();
-            el.innerHTML = days <= 3 ? "🔴 PURGA ACTIVA" : `FIN DEL MES: ${days} DÍAS`;
+            el.innerHTML = days <= 3 ? "🔴 PURGA ACTIVA" : 'FIN DEL MES: ' + days + ' DÍAS';
         }
     }
+
     toggleMute() { this.isMuted = !this.isMuted; this.dom.muteBtn.innerText = this.isMuted ? "🔇" : "🔊"; }
+    
     toast(msg) {
         const t = document.createElement('div'); t.className = 'toast show'; t.innerText = msg;
-        document.getElementById('toast-container').appendChild(t);
-        setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 2000);
+        const container = document.getElementById('toast-container');
+        if(container) {
+            container.appendChild(t);
+            setTimeout(function() { t.classList.remove('show'); setTimeout(function() { t.remove(); }, 300); }, 2000);
+        }
     }
-    sanitize(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+
+    sanitize(str) { 
+        const d = document.createElement('div'); 
+        d.textContent = str; 
+        return d.innerHTML; 
+    }
 }
 
 window.app = new App();
