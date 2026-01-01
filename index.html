@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <meta name="theme-color" content="#121212">
     <title>EL MURO | Chistes Malos AI</title>
-    <link rel="stylesheet" href="css/style.css?v=2.1">
+    <link rel="stylesheet" href="css/style.css?v=2.2">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Permanent+Marker&family=Kalam:wght@400;700&family=Dancing+Script:wght@700&family=Indie+Flower&family=Inter:wght@400;900&display=swap" rel="stylesheet">
@@ -17,20 +17,22 @@
     
     <header class="main-header">
         <div class="header-inner">
-            <h1 id="title-sign">
-                <span class="top-line">EL MURO DE LOS</span>
-                <span class="bot-line">CHISTES MALOS</span>
-            </h1>
+            <div class="header-top-row" style="display:flex; width:100%; justify-content:space-between; align-items:center;">
+                <h1 id="title-sign">
+                    <span class="top-line">EL MURO DE LOS</span>
+                    <span class="bot-line">CHISTES MALOS</span>
+                </h1>
+                
+                <div class="header-controls">
+                    <button id="mute-btn" class="icon-btn" aria-label="Mute">🔊</button>
+                    <button id="mobile-dash-toggle" class="icon-btn mobile-only">🏆</button>
+                </div>
+            </div>
             
             <div class="filter-bar">
                 <button class="filter-btn active" data-sort="new">NUEVOS</button>
                 <button class="filter-btn" data-sort="best">TOP 🔥</button>
                 <button class="filter-btn" data-sort="controversial">💀 PURGA</button>
-            </div>
-
-            <div class="header-controls">
-                <button id="mute-btn" class="icon-btn" aria-label="Mute">🔊</button>
-                <button id="mobile-dash-toggle" class="icon-btn mobile-only">🏆</button>
             </div>
         </div>
     </header>
