@@ -1,5 +1,5 @@
 /**
- * EL MURO V11.4 - FIXES & AI BRIDGE
+ * EL MURO V11.5 - CLEAN ARCHITECTURE & AI FIX
  */
 
 const SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -34,8 +34,10 @@ class App {
         this.initEvents();
         this.loadLocalJokes();
         this.initGlobalSync(); 
-        this.updateAvatarUI();
-        this.checkPurgeTimer();
+        
+        // Ejecución segura de UI inicial
+        if (typeof this.updateAvatarUI === 'function') this.updateAvatarUI();
+        if (typeof this.checkPurgeTimer === 'function') this.checkPurgeTimer();
     }
 
     loadUser() {
@@ -69,7 +71,7 @@ class App {
                 this.checkDailyAIJoke();
                 localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(data));
             }
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error("Sync Error:", e); }
 
         client.channel('public:jokes').on('postgres_changes', { event: '*', schema: 'public', table: 'jokes' }, () => {
             this.refreshData();
@@ -106,59 +108,72 @@ class App {
 
     initEvents() {
         const self = this;
-        this.dom.postBtn.onclick = () => self.post();
+        if(this.dom.postBtn) this.dom.postBtn.onclick = () => self.post();
         
         if(this.dom.testAiBtn) {
-            this.dom.testAiBtn.onclick = () => self.forceAIJoke();
+            this.dom.testAiBtn.onclick = () => {
+                console.log("Boton IA pulsado");
+                self.forceAIJoke();
+            };
         }
 
         this.dom.filters.forEach(btn => {
             btn.onclick = () => {
-                this.dom.filters.forEach(f => f.classList.remove('active'));
+                self.dom.filters.forEach(f => f.classList.remove('active'));
                 btn.classList.add('active');
-                this.state.sort = btn.dataset.sort;
-                this.syncWall(); 
+                self.state.sort = btn.dataset.sort;
+                self.syncWall(); 
             };
         });
 
         this.dom.dots.forEach(d => {
             d.onclick = () => {
-                this.dom.dots.forEach(x => x.classList.remove('active'));
+                self.dom.dots.forEach(x => x.classList.remove('active'));
                 d.classList.add('active');
             };
         });
 
-        if(this.dom.title) this.dom.title.onclick = () => this.tryAdminAccess();
-        if(this.dom.muteBtn) this.dom.muteBtn.onclick = () => this.toggleMute();
+        if(this.dom.title) this.dom.title.onclick = () => self.tryAdminAccess();
+        if(this.dom.muteBtn) this.dom.muteBtn.onclick = () => self.toggleMute();
         
         if(this.dom.dashToggle) {
             this.dom.dashToggle.onclick = () => {
-                const isHidden = this.dom.dashboard.getAttribute('aria-hidden') === 'true';
-                this.dom.dashboard.setAttribute('aria-hidden', !isHidden);
-                this.dom.dashToggle.innerText = isHidden ? "❌" : "🏆";
+                const isHidden = self.dom.dashboard.getAttribute('aria-hidden') === 'true';
+                self.dom.dashboard.setAttribute('aria-hidden', !isHidden);
+                self.dom.dashToggle.innerText = isHidden ? "❌" : "🏆";
             };
         }
     }
 
+    updateAvatarUI() { 
+        if(this.dom.avatarImg) {
+            this.dom.avatarImg.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + this.user.id; 
+        }
+    }
+
     async forceAIJoke() {
-        this.toast("🤖 El Bot está pensando...");
-        const jokeText = await this.generateGroqJoke();
-        if (jokeText) {
-            const names = ["Alex", "Leo", "Sofi", "Marc", "Eva", "Bruno", "Iris", "Luca"];
-            const name = names[Math.floor(Math.random()*names.length)];
-            const joke = {
-                text: jokeText, author: name, authorid: CONFIG.AI_NAME,
-                color: "#FFEB3B", rot: 1, votes_best: 0, votes_bad: 0
-            };
-            const { error } = await client.from('jokes').insert([joke]);
-            if (!error) {
-                this.refreshData();
-                this.toast("✅ ¡Bot ha posteado!");
+        this.toast("🤖 Llamando a la IA...");
+        try {
+            const jokeText = await this.generateGroqJoke();
+            if (jokeText) {
+                const names = ["Alex", "Leo", "Sofi", "Marc", "Eva", "Bruno", "Iris", "Luca"];
+                const name = names[Math.floor(Math.random()*names.length)];
+                const joke = {
+                    text: jokeText, author: name, authorid: CONFIG.AI_NAME,
+                    color: "#FFEB3B", rot: 1, votes_best: 0, votes_bad: 0
+                };
+                const { error } = await client.from('jokes').insert([joke]);
+                if (!error) {
+                    this.refreshData();
+                    this.toast("✅ ¡IA ha respondido!");
+                } else {
+                    this.toast("🔴 Error al guardar chiste IA");
+                }
             } else {
-                this.toast("🔴 Error al insertar chiste");
+                this.toast("🔴 La IA no ha devuelto nada");
             }
-        } else {
-            this.toast("🔴 El Bot no responde");
+        } catch(e) {
+            this.toast("🔴 Error de conexión con el Bot");
         }
     }
 
@@ -171,9 +186,9 @@ class App {
             if (error) throw error;
             return data.joke;
         } catch (e) { 
-            console.error("AI Error:", e);
+            console.error("Invoke Error:", e);
             return null; 
-        } 
+        }
     }
 
     getSortedJokes() {
@@ -203,14 +218,14 @@ class App {
         el.style.setProperty('--rot', (joke.rot || 0) + 'deg');
         const isVoted = this.user.voted.includes(joke.id);
         
-        el.innerHTML = '<div class="post-body">' + this.sanitize(joke.text) + '</div>' + 
+        el.innerHTML = '<div class="post-body">' + this.sanitize(joke.text) + '</div>' +
             '<div class="post-footer">' + 
                 '<div class="author-info"><img src="https://api.dicebear.com/7.x/bottts/svg?seed=' + (joke.authorid || joke.author) + '">' + this.sanitize(joke.author) + '</div>' + 
                 '<div class="actions">' + 
-                    (this.isAdmin ? '<button class="act-btn" onclick="app.deleteJoke(\''+joke.id+'\')" style="background:#ff1744; color:#fff;">🗑️</button>' : '') + 
-                    '<button class="act-btn ' + (isVoted?'voted':'') + '" onclick="app.vote(\'' + joke.id + '\', \'best\')">🤣 <span>' + (joke.votes_best || 0) + '</span></button>' + 
-                    '<button class="act-btn ' + (isVoted?'voted':'') + '" onclick="app.vote(\'' + joke.id + '\', \'bad\')">🍅 <span>' + (joke.votes_bad || 0) + '</span></button>' + 
-                    '<button class="act-btn" onclick="app.share(\'' + joke.id + '\')">↗️</button>' + 
+                    (this.isAdmin ? '<button class="act-btn" onclick="app.deleteJoke(\"' + joke.id + '\")" style="background:#ff1744; color:#fff;">🗑️</button>' : '') + 
+                    '<button class="act-btn ' + (isVoted?'voted':'') + '" onclick="app.vote(\"' + joke.id + '\", \'best\')">🤣 <span>' + (joke.votes_best || 0) + '</span></button>' + 
+                    '<button class="act-btn ' + (isVoted?'voted':'') + '" onclick="app.vote(\"' + joke.id + '\", \'bad\')">🍅 <span>' + (joke.votes_bad || 0) + '</span></button>' + 
+                    '<button class="act-btn" onclick="app.share(\"' + joke.id + '\")">↗️</button>' + 
                 '</div>' + 
             '</div>';
         return el;
@@ -225,8 +240,8 @@ class App {
         try {
             const activeDot = document.querySelector('.dot.active');
             const color = activeDot ? activeDot.dataset.color : '#FFEB3B';
-            const joke = {
-                text: text, author: alias, authorid: this.user.id,
+            const joke = { 
+                text: text, author: alias, authorid: this.user.id, 
                 color: color, rot: parseFloat((Math.random()*4-2).toFixed(1)), 
                 votes_best: 0, votes_bad: 0 
             };
@@ -239,7 +254,7 @@ class App {
             this.toast("¡Pegado! 🌍");
         } catch(e) { 
             console.error("Error:", e.message);
-            this.toast("🔴 Error: " + e.message); 
+            this.toast("🔴 Error al publicar: " + e.message); 
         }
         this.dom.postBtn.disabled = false;
     }
@@ -276,7 +291,6 @@ class App {
         if (navigator.share) await navigator.share({ title: 'EL MURO', text: txt, url: window.location.href });
         else window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(txt), '_blank');
     }
-    updateAvatarUI() { if(this.dom.avatarImg) this.dom.avatarImg.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + this.user.id; }
     checkPurgeTimer() {
         const el = document.getElementById('purgatory-status');
         if(el) {
