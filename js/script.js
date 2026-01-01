@@ -225,6 +225,22 @@ window.onload = function() {
         app.dom.dashToggle.innerText = isHidden ? "X" : "🏆";
     };
 
+    const closeBtn = document.getElementById('close-dash-btn');
+    if(closeBtn) {
+        closeBtn.onclick = () => {
+            app.dom.dashboard.setAttribute('aria-hidden', 'true');
+            app.dom.dashToggle.innerText = "🏆";
+        };
+    }
+
+    // Cerrar al hacer clic fuera (en el muro)
+    app.dom.mural.onclick = () => {
+        if (app.dom.dashboard.getAttribute('aria-hidden') === 'false') {
+            app.dom.dashboard.setAttribute('aria-hidden', 'true');
+            app.dom.dashToggle.innerText = "🏆";
+        }
+    };
+
     if(app.dom.avatarImg) app.dom.avatarImg.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + app.user.id;
     initGlobalSync();
 };
