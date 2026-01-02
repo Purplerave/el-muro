@@ -38,7 +38,14 @@ body {
 .header-inner { width: 100%; max-width: 1400px; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; margin: 0 auto; }
 
 #title-sign .top-line { font-size: 0.9rem; font-weight: 900; color: #666; letter-spacing: 2px; }
-#title-sign .bot-line { font-family: var(--font-head); font-size: 2.5rem; color: var(--text-dark); }
+#title-sign .bot-line { 
+    font-family: var(--font-head); 
+    font-size: 3rem; 
+    color: #ff9500; 
+    text-shadow: 3px 3px 0px #000;
+    -webkit-text-stroke: 1px #000;
+    letter-spacing: 1px;
+}
 
 .filter-bar { display: flex; gap: 10px; background: #e0e0de; padding: 5px; border-radius: 10px; }
 .filter-btn { background: transparent; border: none; color: #666; padding: 8px 15px; font-weight: 900; cursor: pointer; border-radius: 8px; font-size: 0.8rem; }
@@ -96,7 +103,15 @@ body {
 }
 
 .author-info { display: flex; align-items: center; gap: 8px; }
-.author-info img { width: 28px !important; height: 28px !important; border-radius: 50%; background: #fff; border: 1px solid #ddd; }
+.author-info img { 
+    width: 32px !important; 
+    height: 32px !important; 
+    border-radius: 50% !important; 
+    background: #fff; 
+    border: 2px solid #000;
+    display: inline-block !important;
+    vertical-align: middle;
+}
 
 .act-btn { 
     background: #fff; 

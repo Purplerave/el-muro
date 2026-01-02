@@ -75,7 +75,8 @@ function cacheDOM() {
         searchInput: document.getElementById('search-input'),
         charCounter: document.getElementById('char-counter'),
         closeDash: document.getElementById('close-dash-btn'),
-        error: document.getElementById('error-display')
+        error: document.getElementById('error-display'),
+        purgStatus: document.getElementById('purgatory-status')
     };
 }
 
@@ -317,7 +318,21 @@ window.onload = function() {
 
 function updateStats() {
     var worst = app.state.jokes.filter(function(j) { return (j.votes_bad || 0) > (j.votes_best || 0); }).slice(0, 3);
-    if (app.dom.purgList) app.dom.purgList.innerHTML = worst.map(function(j) { return '<li><span>' + sanitize(j.author) + '</span> <span style="color:#ff1744">🍅 ' + j.votes_bad + '</span></li>'; }).join('') || '<li>Libre</li>';
+    
+    var now = new Date();
+    var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    var daysLeft = lastDay - now.getDate();
+    var statusMsg = "";
+
+    if (daysLeft <= 3) {
+        statusMsg = "<b style='color:#ff1744'>⚠️ EL JUICIO HA COMENZADO.</b> Los 3 de abajo están en peligro. ¡Vota 🤣 para intentar salvarlos!";
+    } else {
+        statusMsg = "La Purga comienza en " + (daysLeft - 3) + " días. Los peores caerán.";
+    }
+
+    if (app.dom.purgStatus) app.dom.purgStatus.innerHTML = "<p style='font-size:0.8rem; margin:10px 0;'>" + statusMsg + "</p>";
+
+    if (app.dom.purgList) app.dom.purgList.innerHTML = worst.map(function(j) { return '<li><img src="https://api.dicebear.com/7.x/bottts/svg?seed=' + (j.authorid || j.author) + '" style="width:20px;height:20px;border-radius:50%;margin-right:10px;"> <span>' + sanitize(j.author) + '</span> <span style="color:#ff1744">🍅 ' + j.votes_bad + '</span></li>'; }).join('') || '<li>Libre por ahora...</li>';
     var best = app.state.jokes.slice().sort(function(a,b) { return (b.votes_best || 0) - (a.votes_best || 0); }).slice(0, 5);
     if (app.dom.humorList) app.dom.humorList.innerHTML = best.map(function(j) { return '<li><span>' + sanitize(j.author) + '</span> <span style="color:var(--accent)">🤣 ' + (j.votes_best || 0) + '</span></li>'; }).join('');
 }
