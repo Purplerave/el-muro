@@ -1,5 +1,5 @@
 /**
- * EL MURO V18.0 - RESILIENCIA TOTAL (FIX BRAVE & LOOPS)
+ * EL MURO V19.0 - COMPATIBILIDAD TOTAL (BRAVE READY)
  */
 
 var SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -9,10 +9,15 @@ var CONFIG = {
     USER_KEY: 'elMuro_v6_usr',
     STORAGE_KEY: 'elMuro_v6_db',
     AI_NAME: '00000000-0000-0000-0000-000000000000',
-    COOLDOWN_MS: 20000 // Reducido a 20s para mejor UX
+    COOLDOWN_MS: 20000
 };
 
-var client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+var client;
+try {
+    client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} catch(e) {
+    console.error("Error al iniciar Supabase. Posible bloqueo de Brave.");
+}
 
 function debounce(func, wait) {
     var timeout;
@@ -29,7 +34,6 @@ window.app = {
     state: { jokes: [], sort: 'new' },
     displayOrder: [],
     user: null,
-    fingerprint: null,
     isMuted: false,
     sounds: {
         post: new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'),
@@ -43,22 +47,27 @@ function playSfx(name) {
     if (app.isMuted) return;
     try {
         var s = app.sounds[name];
-        if (s) { s.currentTime = 0; s.play().catch(function(e) {}); }
+        if (s) { s.currentTime = 0; s.play().catch(function() {}); }
     } catch(e) {}
 }
 
 function loadUser() {
     var u;
-    try { u = JSON.parse(localStorage.getItem(CONFIG.USER_KEY)); } catch(e) { u = null; }
+    try { 
+        u = JSON.parse(localStorage.getItem(CONFIG.USER_KEY)); 
+    } catch(e) { u = null; }
+    
     if (!u || !u.id) {
         u = { id: 'usr_' + Math.random().toString(36).substr(2, 9), voted: [], owned: [], alias: '' };
-        localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(u));
+        try {
+            localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(u));
+        } catch(e) {}
     }
     return u;
 }
 
 async function initGlobalSync() {
-    console.log("Iniciando Sync...");
+    if (!client) return;
     try {
         var res = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(200);
         if (res.data) {
@@ -107,21 +116,22 @@ function createCard(joke) {
     var vClass = isVoted ? 'voted' : '';
     var authorImg = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (joke.authorid || joke.author);
 
-    el.innerHTML = '<div class="post-body">' + sanitize(joke.text) + '</div>' + 
-        '<div class="post-footer">' + 
-            '<div class="author-info">' + 
-                '<img src="' + authorImg + '" style="width:24px;height:24px;border-radius:50%;">' + 
-                '<span>' + sanitize(joke.author) + '</span>' + 
-            '</div>' + 
-            '<div class="actions">' + 
-                '<button class="act-btn vote-btn ' + vClass + '" data-id="' + joke.id + '" data-type="best">🤣 <span>' + (joke.votes_best || 0) + '</span></button>' + 
-                '<button class="act-btn vote-btn ' + vClass + '" data-id="' + joke.id + '" data-type="bad">🍅 <span>' + (joke.votes_bad || 0) + '</span></button>' + 
-            '</div>' + 
+    el.innerHTML = '<div class="post-body">' + sanitize(joke.text) + '</div>' +
+        '<div class="post-footer">' +
+            '<div class="author-info">' +
+                '<img src="' + authorImg + '" style="width:24px;height:24px;border-radius:50%;">' +
+                '<span>' + sanitize(joke.author) + '</span>' +
+            '</div>' +
+            '<div class="actions">' +
+                '<button class="act-btn vote-btn ' + vClass + '" data-id="' + joke.id + '" data-type="best">🤣 <span>' + (joke.votes_best || 0) + '</span></button>' +
+                '<button class="act-btn vote-btn ' + vClass + '" data-id="' + joke.id + '" data-type="bad">🍅 <span>' + (joke.votes_bad || 0) + '</span></button>' +
+            '</div>' +
         '</div>';
     return el;
 }
 
 async function vote(id, type) {
+    if (!client) return showToast('Error conexión');
     if (app.user.voted.indexOf(id) !== -1) return showToast('Ya has votado');
     playSfx(type === 'best' ? 'laugh' : 'splat');
 
@@ -131,18 +141,19 @@ async function vote(id, type) {
             joke_id: id, 
             field_name: field,
             visitor_id: app.user.id,
-            device_fp: app.fingerprint || app.user.id 
+            device_fp: app.user.id // Usamos ID de usuario en lugar de huella para Brave
         });
         if (!res.error) { 
             app.user.voted.push(id);
             localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(app.user)); 
-            initGlobalSync(); // Refresco instantáneo
+            initGlobalSync();
         }
     } catch(e) {}
 }
 
 async function postJoke() {
-    console.log("Intentando pegar chiste...");
+    if (!client) return showToast('Desactiva los escudos de Brave');
+    
     var lastPostTime = localStorage.getItem('last_post_time') || 0;
     if (Date.now() - lastPostTime < CONFIG.COOLDOWN_MS) return showToast('Espera un poco...');
 
@@ -170,17 +181,13 @@ async function postJoke() {
         }]).select();
         
         if (!res.error) { 
-            console.log("Chiste pegado con éxito");
             playSfx('post');
             if(textInput) textInput.value = ''; 
             localStorage.setItem('last_post_time', Date.now());
             showToast('¡Pegado!'); 
             initGlobalSync(); 
-        } else { 
-            console.error("Error insert:", res.error);
-            showToast('Error al guardar');
         }
-    } catch(e) { console.error("Error red:", e); showToast('Error de red'); }
+    } catch(e) { showToast('Error de conexión'); }
     if(btn) btn.disabled = false;
 }
 
@@ -192,65 +199,55 @@ function showToast(m) {
 
 function sanitize(s) { 
     if(!s) return "";
-    return s.replace(/[<>\"']/g, '').substring(0, 300); 
+    var temp = document.createElement('div');
+    temp.textContent = s;
+    return temp.innerHTML.substring(0, 300);
 }
 
 window.onload = function() {
-    console.log("V18.0 START");
     app.user = loadUser();
     
-    // 1. VINCULAR EVENTOS CRÍTICOS PRIMERO
-    var postBtn = document.getElementById('post-btn');
-    if(postBtn) postBtn.onclick = postJoke;
+    // 1. Vincular botón pegar
+    var pb = document.getElementById('post-btn');
+    if(pb) pb.onclick = function() { postJoke(); };
 
-    var dots = document.querySelectorAll('.dot');
-    for (var i=0; i<dots.length; i++) {
-        dots[i].onclick = function() {
+    // 2. Colores
+    var d = document.querySelectorAll('.dot');
+    for (var i=0; i<d.length; i++) {
+        d[i].onclick = function() {
             var all = document.querySelectorAll('.dot');
             for (var j=0; j<all.length; j++) all[j].classList.remove('active');
             this.classList.add('active');
         };
     }
 
-    // 2. BUSCADOR (CORREGIDO BUCLE INFINITO)
-    var sInput = document.getElementById('search-input');
-    if(sInput) {
-        var debouncedSearch = debounce(function(val) {
-            var t = val.toLowerCase();
-            var cards = document.querySelectorAll('.post-it');
-            for (var k=0; k<cards.length; k++) {
-                var content = cards[k].querySelector('.post-body').textContent.toLowerCase();
-                cards[k].style.display = content.indexOf(t) !== -1 ? 'block' : 'none';
-            }
-        }, 300);
-        sInput.oninput = function(e) { debouncedSearch(e.target.value); };
+    // 3. Filtros
+    var f = document.querySelectorAll('.filter-btn');
+    for (var k=0; k<f.length; k++) {
+        f[k].onclick = function() {
+            var allF = document.querySelectorAll('.filter-btn');
+            for (var m=0; m<allF.length; m++) allF[m].classList.remove('active');
+            this.classList.add('active');
+            app.state.sort = this.dataset.sort;
+            freezeOrder();
+            syncWall();
+        };
     }
 
-    // 3. DASHBOARD
-    var dToggle = document.getElementById('mobile-dash-toggle');
-    if(dToggle) dToggle.onclick = function() {
+    // 4. Otros
+    var dt = document.getElementById('mobile-dash-toggle');
+    if(dt) dt.onclick = function() {
         var dash = document.getElementById('dashboard');
         var isH = dash.getAttribute('aria-hidden') === 'true';
         dash.setAttribute('aria-hidden', !isH);
         this.innerText = isH ? '✕' : '🏆';
     };
 
-    // 4. AVATAR & FINGERPRINT (OPCIONAL)
     var av = document.getElementById('my-avatar-img');
     if(av) av.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + app.user.id;
 
-    try {
-        if (typeof FingerprintJS !== 'undefined') {
-            FingerprintJS.load().then(function(fp) { return fp.get(); }).then(function(result) {
-                app.fingerprint = result.visitorId;
-            }).catch(function(){});
-        }
-    } catch(e) {}
-
-    // 5. CARGAR DATOS
     initGlobalSync();
     
-    // Delegación para votos
     var mural = document.getElementById('mural');
     if(mural) {
         mural.addEventListener('click', function(e) {
