@@ -12,6 +12,7 @@ serve(async (req) => {
     const { memory } = await req.json()
     const GROQ_KEY = Deno.env.get('GROQ_KEY')
 
+    // CAMBIO AL NUEVO MODELO GPT OSS 20B DE GROQ
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 
@@ -19,15 +20,15 @@ serve(async (req) => {
         'Content-Type': 'application/json' 
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
+        model: "gpt-oss-20b",
         messages: [
           { 
             role: "system", 
-            content: "Eres un experto en el humor español de toda la vida. Tu objetivo es generar chistes cortos, clásicos y con juegos de palabras que funcionen perfectamente en España. Usa estructuras como: '¿Qué le dice...', 'Doctor, doctor...', 'Mamá, mamá...', 'Jaimito...'. Prohibido traducir chistes del inglés. El chiste debe ser coherente y gracioso por lo malo que es. Solo devuelve el texto del chiste." 
+            content: "Eres un experto en humor español castizo y absurdo. Tu misión es generar chistes cortos que sean 'tan malos que son buenos'. Usa el razonamiento para que el juego de palabras tenga sentido en español de España. Formatos clásicos: ¿Qué le dice...?, Jaimito, Van dos y se cae el del medio, etc. Solo devuelve el texto del chiste, sin comentarios." 
           },
-          { role: "user", content: "Genera un chiste auténtico español. No repitas estos temas: " + memory }
+          { role: "user", content: "Genera un chiste único. No repitas nada parecido a esto: " + memory }
         ],
-        temperature: 0.5
+        temperature: 0.8 // Más alto para que sea más creativo y variado
       })
     })
     

@@ -4,27 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>EL MURO | Chistes Malos AI</title>
-    <link rel="stylesheet" href="css/style.css?v=35.0">
+    <link rel="stylesheet" href="css/style.css?v=36.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Kalam:wght@400;700&family=Inter:wght@400;900&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="toast-container"></div>
-    
     <header class="main-header">
         <div class="header-inner">
             <div class="header-top-row">
-                <h1 id="title-sign">
-                    <span class="top-line">EL MURO DE LOS</span>
-                    <span class="bot-line">CHISTES MALOS</span>
-                </h1>
+                <h1 id="title-sign"><span class="bot-line">EL MURO</span></h1>
                 <div class="header-controls">
-                    <input type="text" id="search-input" placeholder="🔍 Buscar chiste..." class="search-bar">
+                    <input type="text" id="search-input" placeholder="🔍 Buscar..." class="search-bar">
                     <button id="mute-btn" class="icon-btn">🔊</button>
                 </div>
             </div>
-            
             <nav class="filter-bar">
                 <button class="filter-btn active" data-sort="new">NUEVOS</button>
                 <button class="filter-btn" data-sort="best">TOP 🔥</button>
@@ -36,17 +31,14 @@
     <div id="main-layout">
         <main id="mural-wrapper">
             <div id="mural" class="auto-grid">
-                <div class="skeleton"></div>
-                <div class="skeleton"></div>
+                <!-- Los chistes cargarán aquí -->
             </div>
         </main>
-
         <aside id="dashboard" aria-hidden="true">
             <button id="close-dash-btn">✕</button>
             <div class="dashboard-content">
                 <section class="dash-section danger-zone">
-                    <h3>💀 EL JUICIO FINAL</h3>
-                    <p class="dash-desc">Los 3 peores chistes del mes irán a juicio. Solo la audiencia podrá salvar a uno.</p>
+                    <h3>💀 JUICIO FINAL</h3>
                     <div id="purgatory-status"></div>
                     <ul id="purgatory-list" class="rank-list"></ul>
                 </section>
@@ -59,8 +51,6 @@
     </div>
 
     <footer id="input-bar">
-        <div id="error-display" style="display:none; background:#ff1744; color:white; text-align:center; padding:5px; font-size:0.8rem;">Error de conexión. Reintenta.</div>
-        
         <div id="avatar-selector" style="display:none;">
             <div class="av-grid">
                 <img class="av-opt" data-seed="bot1" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot1">
@@ -71,32 +61,24 @@
                 <img class="av-opt" data-seed="bot6" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot6">
             </div>
         </div>
-
         <div class="input-linear-container">
             <div class="user-badge">
-                <div class="avatar-slot" id="avatar-btn">
-                    <img id="my-avatar-img" src="" alt="Avatar">
-                </div>
+                <div class="avatar-slot" id="avatar-btn"><img id="my-avatar-img" src="" alt="Avatar"></div>
                 <input type="text" id="user-alias" placeholder="ALIAS" maxlength="12">
             </div>
-
             <div class="color-picker" id="color-dots">
                 <button class="dot active" style="--c:#fff9c4" data-color="#fff9c4"></button>
                 <button class="dot" style="--c:#ffccbc" data-color="#ffccbc"></button>
                 <button class="dot" style="--c:#c8e6c9" data-color="#c8e6c9"></button>
                 <button class="dot" style="--c:#b3e5fc" data-color="#b3e5fc"></button>
             </div>
-
-            <div class="input-main">
-                <input type="text" id="secret-input" placeholder="¡Pega tu chiste aquí...!" maxlength="300">
-            </div>
-            
+            <div class="input-main"><input type="text" id="secret-input" placeholder="¡Pega tu chiste...!" maxlength="300"></div>
             <button id="post-btn" class="send-btn">PEGAR</button>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <script src="js/script.js?v=35.0"></script>
+    <script src="js/script.js?v=36.0"></script>
 </body>
 </html>
