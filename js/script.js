@@ -219,6 +219,8 @@ async function postJoke() {
             if(textInput) textInput.value = ''; 
             localStorage.setItem('last_post_time', Date.now());
             showToast('¡Pegado!'); 
+            // FORZAR RECARGA DE DATOS PARA VER EL CHISTE AL INSTANTE
+            initGlobalSync(); 
         }
     } catch(e) { showToast('Error red'); }
     if(btn) btn.disabled = false;
@@ -260,7 +262,7 @@ window.onload = function() {
         var debouncedSearch = debounce(function(val) {
             var t = val.toLowerCase();
             var cards = document.querySelectorAll('.post-it');
-            for (var k=0; i<cards.length; k++) {
+            for (var k=0; k<cards.length; k++) {
                 var content = cards[k].querySelector('.post-body').textContent.toLowerCase();
                 cards[k].style.display = content.indexOf(t) !== -1 ? 'block' : 'none';
             }
