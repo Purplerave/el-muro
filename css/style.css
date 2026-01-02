@@ -43,34 +43,32 @@ body { margin: 0; background: var(--bg-office); color: var(--text-dark); font-fa
     line-height: 40px; text-align: center;
 }
 
-/* --- FOOTER AVATAR FIX --- */
 .user-badge { 
-    display: flex; 
-    align-items: center; 
-    gap: 10px; 
+    display: flex !important; 
+    align-items: center !important; 
+    gap: 10px !important; 
     flex-shrink: 0;
+    min-width: 130px; /* Espacio reservado para avatar + alias */
 }
 
 .avatar-slot { 
-    width: 38px !important; 
-    height: 38px !important; 
+    width: 36px !important; 
+    height: 36px !important; 
     border-radius: 50% !important; 
     border: 2px solid #000 !important; 
     background: #fff; 
     overflow: hidden; 
-    display: block !important;
 }
 
 #user-alias { 
-    width: 80px !important; 
-    border: none; 
-    background: transparent;
-    font-weight: 900;
-    font-size: 0.85rem;
+    flex: 1;
+    border: none !important; 
+    background: transparent !important;
+    font-weight: 900 !important;
+    font-size: 0.8rem !important;
     outline: none;
-    padding: 0;
-    margin: 0;
     text-transform: uppercase;
+    padding: 0 !important;
 }
 
 .color-picker { 
