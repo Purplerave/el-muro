@@ -181,8 +181,12 @@ window.vote = async function(id, type) {
 async function postJoke() {
     var input = document.getElementById('secret-input');
     var txt = input ? input.value.trim() : "";
-    var alias = document.getElementById('user-alias').value.trim() || "Anónimo";
-    if (txt.length < 3) return showToast('Muy corto', 'error');
+    var aliasInput = document.getElementById('user-alias');
+    var alias = aliasInput ? aliasInput.value.trim() : "";
+
+    // VALIDACIÓN ESTRICTA DE ALIAS
+    if (alias.length < 2) return showToast('¡Pon tu ALIAS para publicar!', 'error');
+    if (txt.length < 3) return showToast('Chiste muy corto', 'error');
     
     var check = await client.rpc('check_joke_originality', { new_content: txt });
     if (check.data === false) return showToast('Repetido', 'error');
