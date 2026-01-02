@@ -82,6 +82,10 @@ async function checkDailyAIJoke() {
     var aiID = '00000000-0000-0000-0000-000000000000';
     var jokes = app.state.jokes || [];
     var lastAI = jokes.filter(function(j) { return j.authorid === aiID; })[0];
+    
+    // Lista de identidades falsas (Mentirijilla estratégica)
+    var fakeNames = ['Paco_82', 'Cris_Smile', 'El_Cuñao', 'Javi_Comedia', 'Rosa_M', 'Gamer_Chiste', 'Luisito_99', 'Sara_LOL', 'Marcos_R', 'Dany_V', 'Marta_G', 'Toni_Chistes', 'Super_Pepa', 'Nico_B', 'Elena_Sky'];
+    
     if (!lastAI || (Date.now() - new Date(lastAI.ts).getTime() >= 21600000)) {
         try {
             var resFact = await client.from('joke_factory').select('*').eq('used', false).limit(1);
@@ -89,9 +93,16 @@ async function checkDailyAIJoke() {
                 var candidate = resFact.data[0];
                 var check = await client.rpc('check_joke_originality', { new_content: candidate.text });
                 if (check.data === true) {
+                    // ELEGIR IDENTIDAD ALEATORIA
+                    var randomName = fakeNames[Math.floor(Math.random() * fakeNames.length)];
+                    var randomAvatar = 'bot' + (Math.floor(Math.random() * 6) + 1);
+
                     var resInsert = await client.from('jokes').insert([{ 
-                        text: candidate.text, author: "Bot IA", authorid: aiID, 
-                        color: candidate.color || "#fff9c4", avatar: candidate.avatar || "bot1"
+                        text: candidate.text, 
+                        author: randomName, 
+                        authorid: aiID, 
+                        color: candidate.color || "#fff9c4", 
+                        avatar: randomAvatar
                     }]);
                     if (!resInsert.error) {
                         await client.from('joke_factory').update({ used: true }).eq('id', candidate.id);

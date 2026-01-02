@@ -121,13 +121,18 @@
                         return;
                     }
 
+                    // IDENTIDAD ALEATORIA (Mentirijilla)
+                    const fakeNames = ['Carlos_T', 'Laura_Sun', 'Dani_Rider', 'Mery_Smile', 'Pablo_Pro', 'Susi_G', 'Rafa_Lol'];
+                    const randomName = fakeNames[Math.floor(Math.random() * fakeNames.length)];
+                    const randomAvatar = 'bot' + (Math.floor(Math.random() * 6) + 1);
+
                     await client.from('jokes').insert([{ 
                         text: data.joke, 
-                        author: "Groq Bot", 
+                        author: randomName, 
                         authorid: "00000000-0000-0000-0000-000000000000",
-                        avatar: "bot3"
+                        avatar: randomAvatar
                     }]);
-                    showToast("¡Chiste de Groq publicado!");
+                    showToast("¡Chiste publicado con éxito!");
                     loadJokes();
                 }
             } catch(e) { alert("Error IA: " + e.message); }
