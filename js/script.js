@@ -56,7 +56,8 @@ function cacheDOM() {
         dashboard: document.getElementById('dashboard'),
         postBtn: document.getElementById('post-btn'),
         searchInput: document.getElementById('search-input'),
-        charCounter: document.getElementById('char-counter')
+        charCounter: document.getElementById('char-counter'),
+        closeDash: document.getElementById('close-dash-btn')
     };
     if(app.user.alias) app.dom.alias.value = app.user.alias;
 }
@@ -258,8 +259,14 @@ window.onload = function() {
     app.dom.dashToggle.onclick = function() {
         var isH = app.dom.dashboard.getAttribute('aria-hidden') === 'true';
         app.dom.dashboard.setAttribute('aria-hidden', !isH);
-        app.dom.dashToggle.innerText = isH ? 'X' : '🏆';
+        app.dom.dashToggle.innerText = isH ? '✕' : '🏆';
     };
+    if(app.dom.closeDash) {
+        app.dom.closeDash.onclick = function() {
+            app.dom.dashboard.setAttribute('aria-hidden', 'true');
+            app.dom.dashToggle.innerText = '🏆';
+        };
+    }
     if(app.dom.avatarImg) app.dom.avatarImg.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + app.user.id;
     initGlobalSync();
 };
