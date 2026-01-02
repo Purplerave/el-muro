@@ -1,3 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#121212">
+    <title>EL MURO | Chistes Malos AI</title>
+    
+    <!-- Metadatos para Redes Sociales (SEO/Viral) -->
+    <meta property="og:title" content="EL MURO DE LOS CHISTES MALOS 🧱">
+    <meta property="og:description" content="La comunidad de los peores chistes de internet. ¿Podrás sobrevivir a la Purga?">
+    <meta property="og:image" content="https://purplerave.github.io/el-muro/assets/preview.png">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="stylesheet" href="css/style.css?v=3.7">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Permanent+Marker&family=Kalam:wght@400;700&family=Inter:wght@400;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div id="toast-container"></div>
+    
+    <header class="main-header">
+        <div class="header-inner">
+            <div class="header-top-row">
+                <h1 id="title-sign">
+                    <span class="top-line">EL MURO DE LOS</span>
+                    <span class="bot-line">CHISTES MALOS</span>
+                </h1>
+                
+                <div class="header-controls">
+                    <input type="text" id="search-input" placeholder="🔍 Buscar..." class="search-bar">
+                    <button id="mute-btn" class="icon-btn">🔊</button>
+                    <button id="mobile-dash-toggle" class="icon-btn mobile-only">🏆</button>
+                </div>
+            </div>
+            
+            <div class="filter-bar">
+                <button class="filter-btn active" data-sort="new">NUEVOS</button>
+                <button class="filter-btn" data-sort="best">TOP 🔥</button>
+                <button class="filter-btn" data-sort="controversial">💀 PURGA</button>
+            </div>
+        </div>
+    </header>
+
+    <div id="main-layout">
+        <main id="mural-wrapper">
+            <div id="mural" class="auto-grid"></div>
+        </main>
+
+        <aside id="dashboard" aria-hidden="true">
+            <button id="close-dash-btn" class="icon-btn mobile-only" style="position:absolute; top:15px; right:15px; z-index:1001; background:rgba(255,255,255,0.1); border-radius:50%;">✕</button>
+            <div class="dashboard-content">
+                <div class="dash-section danger-zone">
+                    <h3>💀 ZONA DE PELIGRO</h3>
+                    <div id="purgatory-status"></div>
+                    <ul id="purgatory-list" class="rank-list"></ul>
+                </div>
+
+                <div class="dash-section">
+                    <h3>🏆 HALL OF FAME</h3>
+                    <ul id="humorists-list" class="rank-list"></ul>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <footer id="input-bar">
+        <div class="input-linear-container">
+            <div class="row-1-mobile">
+                <div class="user-badge" id="my-badge">
+                    <div class="avatar-slot">
+                        <img id="my-avatar-img" src="" alt="Avatar">
+                    </div>
+                    <input type="text" id="user-alias" placeholder="TU ALIAS" maxlength="12">
+                </div>
+
+                <div class="color-picker">
+                    <button class="dot active" style="--c:#FFEB3B" data-color="#FFEB3B"></button>
+                    <button class="dot" style="--c:#FF4081" data-color="#FF4081"></button>
+                    <button class="dot" style="--c:#00E676" data-color="#00E676"></button>
+                    <button class="dot" style="--c:#2979FF" data-color="#2979FF"></button>
+                </div>
+            </div>
+
+            <div class="row-2-mobile">
+                <div class="input-main">
+                    <input type="text" id="secret-input" placeholder="¡Suelta tu peor chiste...!" maxlength="300">
+                    <span id="char-counter">0/300</span>
+                </div>
+                <button id="post-btn" class="send-btn">PEGAR</button>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/script.js?v=13.0"></script>
+</body>
+</html>
+
+
+---------------------
+
+CSS:
+
+:root {
+    --bg-dark: #121212;
+    --accent: #FFEB3B;
+    --accent-sec: #FF00FF;
+    --text-main: #ffffff;
+    --font-head: 'Bangers', cursive;
+    --font-hand: 'Kalam', cursive;
+    --header-h: 100px;
+    --footer-h: 80px;
+}
+
+body { margin: 0; background: var(--bg-dark); color: var(--text-main); font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+
+/* --- HEADER DESKTOP --- */
+.main-header { height: var(--header-h); position: fixed; top: 0; width: 100%; z-index: 500; background: #121212; display: flex; align-items: center; border-bottom: 2px solid #222; }
+.header-inner { width: 100%; max-width: 1400px; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; margin: 0 auto; }
+.header-top-row { display: contents; }
+
+#title-sign { display: flex; flex-direction: column; line-height: 0.8; filter: drop-shadow(3px 3px 0 #000); cursor: pointer; }
+.bot-line { font-family: 'Bangers'; font-size: 3rem; color: var(--accent); -webkit-text-stroke: 1px black; text-shadow: 3px 3px 0px var(--accent-sec); }
+
+.header-controls { display: flex; gap: 15px; align-items: center; }
+.search-bar { background: #222; border: 1px solid #444; color: #fff; padding: 10px 15px; border-radius: 20px; font-size: 0.9rem; width: 200px; outline: none; transition: 0.3s; }
+.search-bar:focus { border-color: var(--accent); width: 250px; }
+
+.filter-bar { display: flex; gap: 8px; background: #000; padding: 3px; border: 1px solid #333; }
+.filter-btn { background: transparent; border: none; color: #888; padding: 8px 15px; font-weight: 900; cursor: pointer; font-size: 0.9rem; }
+.filter-btn.active { background: var(--accent); color: #000; }
+
+.icon-btn { background: #000; border: 1px solid #333; color: #fff; width: 44px; height: 44px; border-radius: 5px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+/* --- MURAL DESKTOP --- */
+#main-layout { display: flex; flex: 1; padding-top: var(--header-h); padding-bottom: var(--footer-h); }
+#mural-wrapper { flex: 1; padding: 25px; }
+.auto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; padding-bottom: 50px; }
+
+.post-it { background: var(--bg-c); color: #000; padding: 20px; border: 2px solid #000; font-family: var(--font-hand); font-size: 1.2rem; box-shadow: 8px 8px 0 #000; position: relative; }
+.post-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px dashed rgba(0,0,0,0.2); padding-top: 10px; }
+.author-info { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: bold; }
+.author-info img { width: 24px !important; height: 24px !important; border-radius: 50%; border: 1px solid #000; background: #fff; flex-shrink: 0; }
+
+.actions { display: flex; gap: 8px; }
+.act-btn { background: #fff; border: 2px solid #000; padding: 5px 10px; border-radius: 4px; font-weight: 900; cursor: pointer; transition: 0.1s; }
+.act-btn:hover { transform: translate(-2px, -2px); box-shadow: 2px 2px 0 #000; }
+
+/* --- INPUT BAR DESKTOP --- */
+#input-bar { position: fixed; bottom: 0; width: 100%; height: var(--footer-h); background: #111; border-top: 4px solid var(--accent); z-index: 600; display: flex; align-items: center; }
+.input-linear-container { display: flex; flex-direction: row !important; gap: 20px; width: 100%; max-width: 1400px; margin: 0 auto; padding: 0 20px; align-items: center; }
+
+.row-1-mobile, .row-2-mobile { display: contents; }
+
+.user-badge { display: flex; align-items: center; background: #222; padding: 8px 15px; border: 1px solid #444; border-radius: 5px; }
+.avatar-slot { width: 35px; height: 35px; border-radius: 50%; border: 1px solid #000; background: #fff; overflow: hidden; margin-right: 12px; }
+#user-alias { background: transparent; border: none; color: var(--accent); width: 120px; outline: none; font-weight: bold; font-size: 1.1rem; }
+
+.color-picker { display: flex; gap: 10px; }
+.dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #000; background: var(--c); cursor: pointer; transition: 0.2s; }
+.dot.active { transform: scale(1.3); border-color: #fff; }
+
+.input-main { flex: 1; position: relative; }
+#secret-input { width: 100%; height: 50px; background: #fff; border: 3px solid #000; padding: 0 15px; font-family: var(--font-hand); font-size: 1.3rem; border-radius: 5px; outline: none; }
+#char-counter { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 0.8rem; color: #666; font-weight: bold; }
+
+.send-btn { background: var(--accent-sec); color: #fff; border: 3px solid #000; padding: 0 30px; height: 50px; font-family: 'Bangers'; font-size: 1.6rem; cursor: pointer; box-shadow: 4px 4px 0 #000; }
+
+/* --- DASHBOARD DESKTOP --- */
+#dashboard { width: 350px; background: #1a1a1a; border-left: 3px solid #000; overflow-y: auto; display: flex; flex-direction: column; }
+.dashboard-content { padding: 25px; }
+.dash-section h3 { color: var(--accent); font-family: 'Bangers'; font-size: 1.5rem; border-bottom: 2px solid #333; margin-bottom: 20px; }
+.rank-list li { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px dashed #333; }
+
+/* --- MOBILE OVERRIDES --- */
+@media (max-width: 1024px) {
+    :root { --header-h: 140px; }
+    
+    html { overflow-x: hidden; height: auto; }
+
+    body { 
+        display: block !important; 
+        min-height: auto !important; 
+        overflow-y: auto !important;
+        height: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .main-header { 
+        height: var(--header-h); 
+        position: sticky; 
+        top: 0; 
+        align-items: flex-start;
+        z-index: 1000;
+        background: #121212;
+    }
+    
+    .header-inner { flex-direction: column; gap: 10px; }
+    .header-top-row { display: flex !important; width: 100%; justify-content: space-between; align-items: center; }
+    #title-sign .bot-line { font-size: 1.8rem; }
+    .search-bar { display: none; }
+    .filter-bar { width: 100%; justify-content: space-around; }
+
+    #main-layout { 
+        display: block !important; 
+        padding-top: 10px; 
+        padding-bottom: 220px; 
+        overflow: visible !important; 
+        height: auto !important;
+        min-height: calc(100vh - var(--header-h) - var(--footer-h));
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #mural-wrapper { 
+        padding: 15px; 
+        overflow: visible !important; 
+        display: block !important;
+        height: auto !important;
+    }
+
+    .auto-grid { 
+        display: block !important; 
+    }
+    
+    .post-it {
+        margin-bottom: 25px; 
+        display: block;
+    }
+
+    #dashboard { 
+        position: fixed; right: -100%; top: 0; bottom: 0; width: 100%; z-index: 2000; 
+        transform: translateX(100%); transition: 0.4s; pointer-events: none;
+        background: rgba(18, 18, 18, 0.98); /* Más opaco para que se vea bien */
+    }
+    #dashboard[aria-hidden="false"] { transform: translateX(0); pointer-events: auto; right: 0; }
+
+    #input-bar { 
+        height: auto; 
+        padding: 15px 0; 
+        position: fixed; 
+        bottom: 0; 
+        background: #111; 
+        z-index: 1500;
+    }
+    .input-linear-container { flex-direction: column !important; gap: 10px; }
+    .row-1-mobile { display: flex !important; width: 100%; justify-content: space-between; }
+    .row-2-mobile { display: flex !important; width: 100%; gap: 10px; padding: 0 10px; }
+    #secret-input { font-size: 1.1rem; }
+    #char-counter { display: none; }
+}
+
+.toast { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 3000; background: #000; color: #fff; padding: 15px 30px; border: 3px solid var(--accent); border-radius: 8px; font-weight: 900; text-align: center; }
+
+
+SCRIPT.JS
+
+
 /**
  * EL MURO V13.8 - REPARACIÓN FINAL EMOJIS Y CARGA
  */
