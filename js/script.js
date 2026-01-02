@@ -1,5 +1,5 @@
 /**
- * EL MURO V33.0 - ELIMINACIÓN DE CACHE Y BLOQUEO ANÓNIMO
+ * EL MURO V36.0 - BRAVE & GROQ STABLE
  */
 
 var SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -67,6 +67,7 @@ function sanitize(s) {
 }
 
 async function initGlobalSync() {
+    console.log("-> Sincronizando con el Muro...");
     try {
         var res = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(200);
         if (res.data) {
@@ -75,7 +76,7 @@ async function initGlobalSync() {
             updateStats();
             checkDailyAIJoke();
         }
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error("Error de sincronización:", e); }
 }
 
 async function checkDailyAIJoke() {
@@ -83,34 +84,33 @@ async function checkDailyAIJoke() {
     var jokes = app.state.jokes || [];
     var lastAI = jokes.filter(function(j) { return j.authorid === aiID; })[0];
     
-    // Lista de identidades falsas (Mentirijilla estratégica)
+    // Nombres aleatorios para la "mentirijilla"
     var fakeNames = ['Paco_82', 'Cris_Smile', 'El_Cuñao', 'Javi_Comedia', 'Rosa_M', 'Gamer_Chiste', 'Luisito_99', 'Sara_LOL', 'Marcos_R', 'Dany_V', 'Marta_G', 'Toni_Chistes', 'Super_Pepa', 'Nico_B', 'Elena_Sky'];
-    
-    if (!lastAI || (Date.now() - new Date(lastAI.ts).getTime() >= 21600000)) {
-        try {
-            var resFact = await client.from('joke_factory').select('*').eq('used', false).limit(1);
-            if (resFact.data && resFact.data.length > 0) {
-                var candidate = resFact.data[0];
-                var check = await client.rpc('check_joke_originality', { new_content: candidate.text });
-                if (check.data === true) {
-                    // ELEGIR IDENTIDAD ALEATORIA
-                    var randomName = fakeNames[Math.floor(Math.random() * fakeNames.length)];
-                    var randomAvatar = 'bot' + (Math.floor(Math.random() * 6) + 1);
 
-                    var resInsert = await client.from('jokes').insert([{ 
-                        text: candidate.text, 
-                        author: randomName, 
-                        authorid: aiID, 
-                        color: candidate.color || "#fff9c4", 
-                        avatar: randomAvatar
-                    }]);
-                    if (!resInsert.error) {
-                        await client.from('joke_factory').update({ used: true }).eq('id', candidate.id);
-                        initGlobalSync();
-                    }
-                }
+    if (!lastAI || (Date.now() - new Date(lastAI.ts).getTime() >= 21600000)) {
+        console.log("-> Solicitando nuevo chiste a Groq (GPT OSS 20B)...");
+        try {
+            // Obtenemos memoria para no repetir
+            var memory = jokes.slice(0, 5).map(function(j) { return j.text; }).join(" | ");
+            
+            var res = await client.functions.invoke('generate-joke', { 
+                body: { memory: memory } 
+            });
+            
+            if (res.data && res.data.joke) {
+                var randomName = fakeNames[Math.floor(Math.random() * fakeNames.length)];
+                var randomAvatar = 'bot' + (Math.floor(Math.random() * 6) + 1);
+
+                await client.from('jokes').insert([{ 
+                    text: res.data.joke, 
+                    author: randomName, 
+                    authorid: aiID, 
+                    color: "#fff9c4", 
+                    avatar: randomAvatar
+                }]);
+                initGlobalSync();
             }
-        } catch(e) {}
+        } catch(e) { console.warn("IA de Groq no disponible temporalmente"); }
     }
 }
 
@@ -118,7 +118,9 @@ function syncWall() {
     var container = document.getElementById('mural');
     if(!container) return;
     container.innerHTML = '';
+    
     var list = app.state.jokes.slice();
+    
     if (app.state.filterTerm) {
         var term = app.state.filterTerm.toLowerCase();
         list = list.filter(function(j) {
@@ -126,16 +128,20 @@ function syncWall() {
                    (j.author && j.author.toLowerCase().indexOf(term) !== -1);
         });
     }
+
     if (app.state.sort === 'best') {
         list.sort(function(a,b){ return (b.votes_best||0)-(a.votes_best||0); });
     } else if (app.state.sort === 'controversial') {
         list = list.filter(function(j){ return (j.votes_bad||0) > (j.votes_best||0); });
         list.sort(function(a,b){ return (b.votes_bad||0)-(a.votes_bad||0); });
     }
+
     if (list.length === 0) {
-        container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:50px; color:#aaa;"><h2>VACÍO</h2></div>';
+        container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:50px; color:#aaa;"><h2>EL MURO ESTÁ LIMPIO</h2></div>';
     } else {
-        for(var i=0; i<list.length; i++) { container.appendChild(createCard(list[i])); }
+        for(var i=0; i<list.length; i++) {
+            container.appendChild(createCard(list[i]));
+        }
     }
 }
 
@@ -162,19 +168,19 @@ function createCard(joke) {
 
 window.shareAsImage = function(id) {
     var card = document.getElementById('joke-' + id);
-    if (!card || typeof html2canvas === 'undefined') return showToast("Cargando...", "error");
-    showToast("Generando...");
+    if (!card) return;
+    showToast("Capturando chiste...");
     html2canvas(card, { useCORS: true, allowTaint: true, scale: 2, backgroundColor: "#ffffff" }).then(function(canvas) {
         var link = document.createElement('a');
-        link.download = 'chiste.png';
+        link.download = 'chiste-el-muro.png';
         link.href = canvas.toDataURL("image/png");
         link.click();
-        showToast("¡Imagen lista!");
+        showToast("¡Imagen descargada!");
     });
 };
 
 window.vote = async function(id, type) {
-    if (app.user.voted.indexOf(id) !== -1) return showToast('Ya votaste', 'error');
+    if (app.user.voted.indexOf(id) !== -1) return showToast('Ya has votado este chiste', 'error');
     playSound(type === 'best' ? 'laugh' : 'splat');
     try {
         var field = (type === 'best' ? 'votes_best' : 'votes_bad');
@@ -193,49 +199,36 @@ async function postJoke() {
     var aliasInput = document.getElementById('user-alias');
     var alias = aliasInput ? aliasInput.value.trim() : "";
 
-    // BLOQUEO ABSOLUTO: SIN ALIAS NO HAY PEGADO
-    if (alias.length < 2) {
-        showToast('¡Escribe tu ALIAS primero!', 'error');
-        if(aliasInput) aliasInput.focus();
-        return; 
-    }
-
+    if (alias.length < 2) return showToast('¡Pon tu ALIAS para publicar!', 'error');
     if (txt.length < 3) return showToast('Chiste muy corto', 'error');
     
     var btn = document.getElementById('post-btn');
-    if(btn) btn.disabled = true;
+    btn.disabled = true;
 
     try {
-        var checkRes = await client.rpc('check_joke_originality', { new_content: txt });
-        if (checkRes.data === false) {
-            if(btn) btn.disabled = false;
-            return showToast('Ese ya está en el muro', 'error');
+        var check = await client.rpc('check_joke_originality', { new_content: txt });
+        if (check.data === false) {
+            btn.disabled = false;
+            return showToast('Ese ya está en el muro...', 'error');
         }
 
         var dot = document.querySelector('.dot.active');
         var col = dot ? dot.getAttribute('data-color') : '#fff9c4';
         
-        client.from('jokes').insert([{ 
-            text: txt, 
-            author: alias, 
-            authorid: app.user.id, 
-            color: col, 
-            avatar: app.user.avatar || 'bot1' 
-        }]).then(function(res) {
-            if (!res.error) { 
-                input.value = ''; 
-                playSound('post'); 
-                showToast('¡Pegado!'); 
-                app.user.alias = alias;
-                localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user));
-                initGlobalSync(); 
-            }
-            if(btn) btn.disabled = false;
-        });
-    } catch(e) {
-        if(btn) btn.disabled = false;
-        showToast('Error red', 'error');
-    }
+        var res = await client.from('jokes').insert([{ 
+            text: txt, author: alias, authorid: app.user.id, color: col, avatar: app.user.avatar || 'bot1' 
+        }]);
+        
+        if (!res.error) { 
+            input.value = ''; 
+            playSound('post'); 
+            showToast('¡Pegado!'); 
+            app.user.alias = alias;
+            localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user));
+            initGlobalSync(); 
+        }
+    } catch(e) { showToast("Error de red", 'error'); }
+    btn.disabled = false;
 }
 
 function updateStats() {
@@ -246,11 +239,6 @@ function updateStats() {
     var worst = list.filter(function(j){ return (j.votes_bad||0)>(j.votes_best||0); }).sort(function(a,b){ return (b.votes_bad||0)-(a.votes_bad||0); }).slice(0, 3);
     var pl = document.getElementById('purgatory-list');
     if (pl) pl.innerHTML = worst.map(function(j) { return '<li><span>' + sanitize(j.author) + '</span> <span style="color:#ff1744;margin-left:auto;">🍅 ' + (j.votes_bad||0) + '</span></li>'; }).join('') || '<li>Limpio</li>';
-    var now = new Date();
-    var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    var daysLeft = lastDay - now.getDate();
-    var ps = document.getElementById('purgatory-status');
-    if (ps) ps.innerHTML = '<p style="color:#888;">Faltan ' + daysLeft + ' días.</p>';
 }
 
 window.onload = function() {
@@ -290,8 +278,8 @@ window.onload = function() {
     var dots = document.querySelectorAll('.dot');
     for (var j=0; j<dots.length; j++) {
         dots[j].onclick = function() {
-            var all = document.querySelectorAll('.dot');
-            for (var k=0; k<all.length; k++) all[k].classList.remove('active');
+            var allD = document.querySelectorAll('.dot');
+            for (var k=0; k<allD.length; k++) allD[k].classList.remove('active');
             this.classList.add('active');
         };
     }
