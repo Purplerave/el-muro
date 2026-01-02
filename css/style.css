@@ -26,19 +26,38 @@ body { margin: 0; background: var(--bg-office); color: var(--text-dark); font-fa
 .post-it { background: var(--bg-c); color: #111; padding: 20px; border: 1px solid rgba(0,0,0,0.1); border-bottom: 4px solid rgba(0,0,0,0.15); font-family: var(--font-hand); font-size: 1.2rem; position: relative; }
 .post-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 10px; font-size: 0.8rem; }
 
-/* --- DASHBOARD (MEJORADO) --- */
+/* --- DASHBOARD --- */
 #dashboard { 
     position: fixed; right: -100%; top: 0; bottom: 0; width: 400px; 
     background: #fff; border-left: 4px solid #000; z-index: 5000; 
     transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-    overflow-y: auto; padding: 40px 25px;
+    overflow-y: auto; padding: 60px 25px 40px 25px;
 }
 #dashboard[aria-hidden="false"] { right: 0; }
 
 #close-dash-btn { 
-    position: absolute; top: 15px; right: 15px; width: 44px; height: 44px; 
-    background: #000; color: #fff; border: none; border-radius: 50%; 
-    font-size: 1.5rem; cursor: pointer; z-index: 5100;
+    display: block !important; /* Visible siempre */
+    position: absolute; top: 15px; right: 15px; width: 40px; height: 40px; 
+    background: #000 !important; color: #fff !important; border: none; border-radius: 50%; 
+    font-size: 1.2rem; cursor: pointer; z-index: 5100;
+    line-height: 40px; text-align: center;
+}
+
+/* --- FOOTER AVATAR FIX --- */
+.avatar-slot { 
+    width: 40px !important; 
+    height: 40px !important; 
+    border-radius: 50% !important; 
+    border: 2px solid #000 !important; 
+    background: #eee; 
+    overflow: hidden; 
+    flex-shrink: 0;
+}
+.avatar-slot img { 
+    width: 100% !important; 
+    height: 100% !important; 
+    display: block !important;
+    object-fit: cover;
 }
 
 .dash-section { margin-bottom: 30px; }
