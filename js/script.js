@@ -210,12 +210,22 @@ async function vote(id, type) {
 
     try {
         const field = type === 'best' ? 'votes_best' : 'votes_bad';
-        const { error } = await client.rpc('increment_vote', { joke_id: id, field_name: field });
+        // Enviamos el joke_id, el campo y el ID del usuario (visitor_id)
+        const { error } = await client.rpc('increment_vote', { 
+            joke_id: id, 
+            field_name: field,
+            visitor_id: app.user.id 
+        });
         
         if (!error) { 
             app.user.voted.push(id);
             localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(app.user)); 
-            // La actualización visual vendrá por Realtime
+        } else {
+            if (error.message.includes('VOTO_DUPLICADO')) {
+                showToast('Ya has votado (DB check)');
+                app.user.voted.push(id); // Sincronizamos localmente para que no lo intente más
+                localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(app.user)); 
+            }
         }
     } catch(e) { console.error("Error votando:", e); }
 }
