@@ -103,26 +103,29 @@
         async function triggerGroq() {
             showToast("Groq está pensando...");
             try {
-                // Solo 5 chistes de memoria para ahorrar tokens. 
-                // El Escudo de Originalidad se encarga del resto.
                 const { data: recent } = await client.from('jokes').select('text').order('ts', {ascending:false}).limit(5);
-                const memory = recent.map(r => r.text).join(" | ");
+                const memory = recent ? recent.map(r => r.text).join(" | ") : "";
 
-                const { data, error } = await client.functions.invoke('generate-joke', { 
+                const { data, error: funcError } = await client.functions.invoke('generate-joke', { 
                     body: { memory: memory } 
                 });
 
+                if (funcError) {
+                    console.error("Error Función:", funcError);
+                    alert("Error Supabase Function: " + funcError.message);
+                    return;
+                }
+
                 if (data && data.joke) {
-                    // ESCUDO DE ORIGINALIDAD ANTES DE PEGAR
+                    // ESCUDO DE ORIGINALIDAD
                     const { data: isOriginal } = await client.rpc('check_joke_originality', { new_content: data.joke });
                     
                     if (isOriginal === false) {
-                        showToast("La IA intentó repetir un chiste. Abortado.", "error");
+                        showToast("La IA repitió. Reintenta.", "error");
                         return;
                     }
 
-                    // IDENTIDAD ALEATORIA (Mentirijilla)
-                    const fakeNames = ['Carlos_T', 'Laura_Sun', 'Dani_Rider', 'Mery_Smile', 'Pablo_Pro', 'Susi_G', 'Rafa_Lol'];
+                    const fakeNames = ['Carlos_T', 'Laura_Sun', 'Dani_Rider', 'Mery_Smile', 'Rafa_Lol'];
                     const randomName = fakeNames[Math.floor(Math.random() * fakeNames.length)];
                     const randomAvatar = 'bot' + (Math.floor(Math.random() * 6) + 1);
 
@@ -132,10 +135,12 @@
                         authorid: "00000000-0000-0000-0000-000000000000",
                         avatar: randomAvatar
                     }]);
-                    showToast("¡Chiste publicado con éxito!");
+                    showToast("¡Chiste publicado!");
                     loadJokes();
+                } else {
+                    alert("La IA respondió vacío. Revisa el código de la función.");
                 }
-            } catch(e) { alert("Error IA: " + e.message); }
+            } catch(e) { alert("Error ejecución: " + e.message); }
         }
 
         async function deleteJoke(id) {
