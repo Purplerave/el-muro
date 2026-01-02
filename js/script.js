@@ -207,6 +207,14 @@ async function postJoke() {
     btn.disabled = true;
 
     try {
+        // VERIFICAR ORIGINALIDAD ANTES DE PEGAR
+        var check = await client.rpc('check_joke_originality', { new_content: txt });
+        if (check.data === false) {
+            btn.disabled = false;
+            btn.innerText = "PEGAR";
+            return showToast('Ese ya está en el muro...', 'error');
+        }
+
         var dot = document.querySelector('.dot.active');
         var col = dot ? dot.getAttribute('data-color') : '#fff9c4';
         
