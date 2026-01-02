@@ -103,8 +103,8 @@
         async function triggerGroq() {
             showToast("Groq está pensando...");
             try {
-                // Obtener últimos chistes para la memoria
-                const { data: recent } = await client.from('jokes').select('text').limit(5);
+                // Obtener últimos 20 chistes para una memoria más fuerte
+                const { data: recent } = await client.from('jokes').select('text').order('ts', {ascending:false}).limit(20);
                 const memory = recent.map(r => r.text).join(" | ");
 
                 const { data, error } = await client.functions.invoke('generate-joke', { 
@@ -112,6 +112,14 @@
                 });
 
                 if (data && data.joke) {
+                    // ESCUDO DE ORIGINALIDAD ANTES DE PEGAR
+                    const { data: isOriginal } = await client.rpc('check_joke_originality', { new_content: data.joke });
+                    
+                    if (isOriginal === false) {
+                        showToast("La IA intentó repetir un chiste. Abortado.", "error");
+                        return;
+                    }
+
                     await client.from('jokes').insert([{ 
                         text: data.joke, 
                         author: "Groq Bot", 
