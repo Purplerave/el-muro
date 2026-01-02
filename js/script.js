@@ -1,11 +1,18 @@
 /**
- * EL MURO V20.3 - DEBUG MODE & POSITION FIX
+ * EL MURO V21.0 - PROTOCOLO DE IDENTIDAD REAL
  */
 
 var SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZHppZHRpeXFzdXhubGF6dG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyODIxNTIsImV4cCI6MjA4Mjg1ODE1Mn0.ZmDwXQ_5Rg6mTBM8JS4eDYQoBvH9ceQmHL-ELKqdWVA';
 
 var client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function genUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = (c == 'x' ? r : (r & 0x3 | 0x8));
+        return v.toString(16);
+    });
+}
 
 window.app = {
     state: { jokes: [], sort: 'new' },
@@ -21,8 +28,8 @@ window.app = {
 function loadUser() {
     var u;
     try { u = JSON.parse(localStorage.getItem('elMuro_v6_usr')); } catch(e) { u = null; }
-    if (!u || !u.id) {
-        u = { id: 'usr_' + Math.random().toString(36).substr(2, 9), voted: [], owned: [], alias: '', avatar: 'bot1' };
+    if (!u || !u.id || u.id.indexOf('-') === -1) { // Si no es UUID real, resetear
+        u = { id: genUUID(), voted: [], owned: [], alias: '', avatar: 'bot1' };
         localStorage.setItem('elMuro_v6_usr', JSON.stringify(u));
     }
     return u;
@@ -35,7 +42,7 @@ async function initGlobalSync() {
             app.state.jokes = res.data;
             syncWall();
         }
-    } catch (e) { console.error("Sync error:", e); }
+    } catch (e) { console.error(e); }
 }
 
 function syncWall() {
@@ -55,14 +62,14 @@ function createCard(joke) {
     var el = document.createElement('article');
     el.className = 'post-it';
     el.style.setProperty('--bg-c', joke.color || '#fff9c4');
-    var authorImg = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (joke.authorid || joke.author);
+    var authorImg = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (joke.avatar || joke.authorid || 'bot1');
     el.innerHTML = '<div class="post-body">' + sanitize(joke.text) + '</div>' +
-        '<div class="post-footer">' +
-            '<div class="author-info"><img src="' + authorImg + '" style="width:24px;border-radius:50%;"> ' + sanitize(joke.author) + '</div>' +
-            '<div class="actions">' +
-                '<button class="act-btn" onclick="vote(\"' + joke.id + '\",\'best\")">🤣 '+(joke.votes_best||0)+'</button>' +
-                '<button class="act-btn" onclick="vote(\"' + joke.id + '\",\'bad\")">🍅 '+(joke.votes_bad||0)+'</button>' +
-            '</div>' +
+        '<div class="post-footer">' + 
+            '<div class="author-info"><img src="' + authorImg + '" style="width:24px;border-radius:50%;background:#fff;border:1px solid #eee;margin-right:5px;"> ' + sanitize(joke.author) + '</div>' + 
+            '<div class="actions">' + 
+                '<button class="act-btn" onclick="vote(\"' + joke.id + '\",\'best\")">🤣 '+(joke.votes_best||0)+'</button>' + 
+                '<button class="act-btn" onclick="vote(\"' + joke.id + '\",\'bad\")">🍅 '+(joke.votes_bad||0)+'</button>' + 
+            '</div>' + 
         '</div>';
     return el;
 }
@@ -83,48 +90,38 @@ async function vote(id, type) {
 async function postJoke() {
     var txt = document.getElementById('secret-input').value.trim();
     var alias = document.getElementById('user-alias').value.trim() || "Anónimo";
-
     if (txt.length < 3) return alert('Escribe algo más...');
 
     try {
         var dot = document.querySelector('.dot.active');
         var col = dot ? dot.getAttribute('data-color') : '#fff9c4';
+        var payload = { text: txt, author: alias, authorid: app.user.id, color: col, avatar: app.user.avatar };
         
-        var payload = { text: txt, author: alias, authorid: app.user.id, color: col, votes_best: 0, votes_bad: 0 };
-        
-        console.log("Enviando:", payload);
-        var res = await client.from('jokes').insert([payload]).select();
-        
+        var res = await client.from('jokes').insert([payload]);
         if (res.error) {
-            console.error("DETALLE ERROR SUPABASE:", res.error);
-            alert("Error de la Base de Datos: " + res.error.message);
+            alert("Error: " + res.error.message);
         } else {
             document.getElementById('secret-input').value = '';
             alert("¡Chiste Pegado!");
             initGlobalSync();
         }
-    } catch(e) { 
-        alert("Error de red o ejecución: " + e.message); 
-    }
+    } catch(e) { alert("Error red: " + e.message); }
 }
 
 function sanitize(s) { 
     if(!s) return "";
-    var d = document.createElement('div');
-    d.textContent = s;
+    var d = document.createElement('div'); d.textContent = s;
     return d.innerHTML.substring(0, 300); 
 }
 
 window.onload = function() {
     app.user = loadUser();
     
-    // Configurar Avatar
-    var img = document.getElementById('my-avatar-img');
-    if(img) img.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (app.user.avatar || 'bot1');
+    // Cargar avatar actual
+    document.getElementById('my-avatar-img').src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (app.user.avatar || 'bot1');
 
-    // Eventos de botones principales
+    // Botones
     document.getElementById('post-btn').onclick = postJoke;
-    
     document.getElementById('avatar-btn').onclick = function() {
         var s = document.getElementById('avatar-selector');
         s.style.display = (s.style.display === 'block' ? 'none' : 'block');
@@ -134,7 +131,7 @@ window.onload = function() {
     for (var i=0; i<opts.length; i++) {
         opts[i].onclick = function() {
             var seed = this.getAttribute('data-seed');
-            app.user.avatar = seed;
+            app.user.avatar = seed; // CAMBIA LA CARA, NO EL ID
             localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user));
             document.getElementById('my-avatar-img').src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + seed;
             document.getElementById('avatar-selector').style.display = 'none';
@@ -144,7 +141,8 @@ window.onload = function() {
     var dots = document.querySelectorAll('.dot');
     for (var j=0; j<dots.length; j++) {
         dots[j].onclick = function() {
-            for (var k=0; k<dots.length; k++) dots[k].classList.remove('active');
+            var all = document.querySelectorAll('.dot');
+            for (var k=0; k<all.length; k++) all[k].classList.remove('active');
             this.classList.add('active');
         };
     }
