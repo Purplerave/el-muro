@@ -1,5 +1,5 @@
 /**
- * EL MURO V28.0 - CIERRE DE SEGURIDAD TOTAL
+ * EL MURO V28.1 - STABLE MASTER
  */
 
 var SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -60,7 +60,7 @@ function showToast(msg, type) {
     }, 3000);
 }
 
-function sanitize(s) {
+function sanitize(s) { 
     if(!s) return "";
     var d = document.createElement('div'); d.textContent = s;
     return d.innerHTML.substring(0, 300); 
@@ -80,7 +80,8 @@ async function initGlobalSync() {
 
 async function checkDailyAIJoke() {
     var aiID = '00000000-0000-0000-0000-000000000000';
-    var lastAI = app.state.jokes.filter(function(j) { return j.authorid === aiID; })[0];
+    var jokes = app.state.jokes || [];
+    var lastAI = jokes.filter(function(j) { return j.authorid === aiID; })[0];
     if (!lastAI || (Date.now() - new Date(lastAI.ts).getTime() >= 21600000)) {
         try {
             var resFact = await client.from('joke_factory').select('*').eq('used', false).limit(1);
@@ -222,7 +223,10 @@ window.onload = function() {
         d.setAttribute('aria-hidden', isH ? 'false' : 'true');
         this.innerText = isH ? '✕' : '🏆';
     };
-    document.getElementById('close-dash-btn').onclick = function() { document.getElementById('dashboard').setAttribute('aria-hidden', 'true'); document.getElementById('mobile-dash-toggle').innerText = '🏆'; };
+    document.getElementById('close-dash-btn').onclick = function() { 
+        document.getElementById('dashboard').setAttribute('aria-hidden', 'true'); 
+        document.getElementById('mobile-dash-toggle').innerText = '🏆'; 
+    };
     document.getElementById('avatar-btn').onclick = function() {
         var s = document.getElementById('avatar-selector');
         s.style.display = (s.style.display === 'block' ? 'none' : 'block');
@@ -240,14 +244,16 @@ window.onload = function() {
     var dots = document.querySelectorAll('.dot');
     for (var j=0; j<dots.length; j++) {
         dots[j].onclick = function() {
-            for (var k=0; k<dots.length; k++) dots[k].classList.remove('active');
+            var all = document.querySelectorAll('.dot');
+            for (var k=0; k<all.length; k++) all[k].classList.remove('active');
             this.classList.add('active');
         };
     }
     var filters = document.querySelectorAll('.filter-btn');
     for (var f=0; f<filters.length; f++) {
         filters[f].onclick = function() {
-            for (var x=0; x<filters.length; x++) filters[x].classList.remove('active');
+            var allF = document.querySelectorAll('.filter-btn');
+            for (var x=0; x<allF.length; x++) allF[x].classList.remove('active');
             this.classList.add('active');
             app.state.sort = this.dataset.sort;
             syncWall();

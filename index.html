@@ -6,13 +6,12 @@
     <meta name="theme-color" content="#121212">
     <title>EL MURO | Chistes Malos AI</title>
     
-    <!-- Metadatos para Redes Sociales (SEO/Viral) -->
     <meta property="og:title" content="EL MURO DE LOS CHISTES MALOS 🧱">
     <meta property="og:description" content="La comunidad de los peores chistes de internet. ¿Podrás sobrevivir a la Purga?">
     <meta property="og:image" content="https://purplerave.github.io/el-muro/assets/preview.png">
     <meta name="twitter:card" content="summary_large_image">
 
-    <link rel="stylesheet" href="css/style.css?v=22.0">
+    <link rel="stylesheet" href="css/style.css?v=28.1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Permanent+Marker&family=Kalam:wght@400;700&family=Inter:wght@400;900&display=swap" rel="stylesheet">
@@ -47,7 +46,6 @@
     <div id="main-layout">
         <main id="mural-wrapper">
             <div id="mural" class="auto-grid">
-                <!-- Skeletons iniciales para mejor UX -->
                 <div class="skeleton"></div>
                 <div class="skeleton"></div>
                 <div class="skeleton"></div>
@@ -58,10 +56,9 @@
         <aside id="dashboard" aria-hidden="true">
             <button id="close-dash-btn" class="icon-btn mobile-only" style="position:absolute; top:15px; right:15px; z-index:1001; background:rgba(255,255,255,0.1); border-radius:50%;">✕</button>
             <div class="dashboard-content">
-                <!-- EXPLICACIÓN FIJA DE LA PURGA -->
                 <div class="dash-section danger-zone" style="border-bottom: 2px solid #eee; padding-bottom: 20px;">
                     <h3>💀 EL JUICIO FINAL</h3>
-                    <p style="font-size: 0.85rem; color: #555; line-height: 1.4;">Los 3 peores chistes del mes irán a juicio los últimos 3 días. Solo la audiencia podrá salvar a uno. Los demás serán eliminados para siempre.</p>
+                    <p style="font-size: 0.85rem; color: #555; line-height: 1.4;">Los 3 peores chistes del mes irán a juicio los últimos 3 días. Solo la audiencia podrá salvar a uno.</p>
                     <div id="purgatory-status" style="margin-top: 10px; font-weight: 900;"></div>
                 </div>
 
@@ -81,7 +78,6 @@
     <footer id="input-bar">
         <div id="error-display" style="display:none; background: #ff1744; color: white; text-align: center; padding: 5px; font-size: 0.8rem; font-weight: bold;">Error de conexión. Reintenta.</div>
         
-        <!-- SELECTOR DE AVATARES (OCULTO POR DEFECTO) -->
         <div id="avatar-selector" style="display:none;">
             <div class="av-grid">
                 <img class="av-opt" data-seed="bot1" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot1">
@@ -95,7 +91,7 @@
 
         <div class="input-linear-container">
             <div class="user-badge" id="my-badge">
-                <div class="avatar-slot" id="avatar-btn" title="Cambiar cara">
+                <div class="avatar-slot" id="avatar-btn">
                     <img id="my-avatar-img" src="" alt="Avatar">
                 </div>
                 <input type="text" id="user-alias" placeholder="ALIAS" maxlength="12">
@@ -118,6 +114,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <script src="js/script.js?v=27.0"></script>
+    <script src="js/script.js?v=28.1"></script>
 </body>
 </html>
