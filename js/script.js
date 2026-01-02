@@ -125,14 +125,28 @@ function sanitize(s) {
 window.onload = function() {
     app.user = loadUser();
     
+    // Reset visual del Dashboard
+    var dash = document.getElementById('dashboard');
+    if(dash) dash.setAttribute('aria-hidden', 'true');
+    var dToggle = document.getElementById('mobile-dash-toggle');
+    if(dToggle) dToggle.innerText = '🏆';
+
     // Cargar avatar actual
     document.getElementById('my-avatar-img').src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (app.user.avatar || 'bot1');
 
-    // Botones
+    // Botones Principales
     document.getElementById('post-btn').onclick = postJoke;
+    
     document.getElementById('avatar-btn').onclick = function() {
         var s = document.getElementById('avatar-selector');
         s.style.display = (s.style.display === 'block' ? 'none' : 'block');
+    };
+
+    // Botón Cerrar Dashboard
+    var cb = document.getElementById('close-dash-btn');
+    if(cb) cb.onclick = function() {
+        if(dash) dash.setAttribute('aria-hidden', 'true');
+        if(dToggle) dToggle.innerText = '🏆';
     };
 
     var opts = document.querySelectorAll('.av-opt');
