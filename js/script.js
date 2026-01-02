@@ -78,22 +78,21 @@ function cacheDOM() {
 }
 
 async function initGlobalSync() {
-    console.log("Intentando conectar con Supabase...");
+    console.log("Conexión Segura con EL MURO...");
     try {
         const res = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(200);
         if (res.data) {
             console.log("Datos recibidos:", res.data.length);
             app.state.jokes = res.data;
-            if (new Date().getDate() === 1) executePurge();
             freezeOrder();
             syncWall();
             checkDailyAIJoke();
             localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(res.data));
         } else {
-            console.error("No hay datos o error:", res.error);
+            console.error("Error de acceso:", res.error);
         }
     } catch (e) {
-        console.error("Excepcion en sync:", e);
+        console.error("Excepción en sync:", e);
     }
 
     client.channel('public:jokes').on('postgres_changes', { event: '*', schema: 'public', table: 'jokes' }, function(payload) {
@@ -166,7 +165,6 @@ function createCard(joke) {
     
     var isVoted = app.user.voted.indexOf(joke.id) !== -1;
     var vClass = isVoted ? 'voted' : '';
-    var adminBtn = app.isAdmin ? '<button class="act-btn del-btn" data-id="' + joke.id + '" style="background:#ff1744; color:#fff;">🗑️</button>' : '';
     var authorImg = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (joke.authorid || joke.author);
 
     el.innerHTML = '<div class="post-body">' + sanitize(joke.text) + '</div>' +
@@ -176,7 +174,6 @@ function createCard(joke) {
                 sanitize(joke.author) +
             '</div>' +
             '<div class="actions">' +
-                adminBtn +
                 '<button class="act-btn vote-btn ' + vClass + '" data-id="' + joke.id + '" data-type="best">🤣 <span>' + (joke.votes_best || 0) + '</span></button>' +
                 '<button class="act-btn vote-btn ' + vClass + '" data-id="' + joke.id + '" data-type="bad">🍅 <span>' + (joke.votes_bad || 0) + '</span></button>' +
                 '<button class="act-btn share-btn" data-id="' + joke.id + '">↗️</button>' +
@@ -192,7 +189,6 @@ function initDelegation() {
         var id = btn.dataset.id;
         if (btn.classList.contains('vote-btn')) vote(id, btn.dataset.type);
         if (btn.classList.contains('share-btn')) shareJoke(id);
-        if (btn.classList.contains('del-btn')) deleteJoke(id);
     });
 }
 
@@ -293,11 +289,6 @@ window.onload = function() {
     initGlobalSync();
 };
 
-async function executePurge() {
-    var targets = app.state.jokes.filter(function(j) { return (j.votes_bad || 0) > (j.votes_best || 0); }).slice(0, 3);
-    for (var i=0; i<targets.length; i++) await client.from('jokes').delete().eq('id', targets[i].id);
-}
-
 async function checkDailyAIJoke() {
     var lastAI = app.state.jokes.filter(function(j) { return j.authorid === CONFIG.AI_NAME; })[0];
     if (!lastAI || (Date.now() - new Date(lastAI.ts).getTime() >= 21600000)) {
@@ -315,7 +306,6 @@ function updateStats() {
     if (app.dom.humorList) app.dom.humorList.innerHTML = best.map(function(j) { return '<li><img src="https://api.dicebear.com/7.x/bottts/svg?seed=' + (j.authorid || j.author) + '" style="width:20px;height:20px;border-radius:50%;margin-right:10px;"> <span>' + j.author + '</span> <span style="color:var(--accent)">🤣 ' + (j.votes_best || 0) + '</span></li>'; }).join('');
 }
 
-async function deleteJoke(id) { if (confirm('Borrar?')) { await client.from('jokes').delete().eq('id', id); refreshData(); } }
 async function shareJoke(id) {
     var joke = app.state.jokes.find(function(j) { return j.id === id; });
     var txt = '"' + joke.text + '" - en EL MURO';
