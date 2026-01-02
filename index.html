@@ -76,9 +76,22 @@
 
     <footer id="input-bar">
         <div id="error-display" style="display:none; background: #ff1744; color: white; text-align: center; padding: 5px; font-size: 0.8rem; font-weight: bold;">Error de conexión. Reintenta.</div>
+        
+        <!-- SELECTOR DE AVATARES (OCULTO POR DEFECTO) -->
+        <div id="avatar-selector" style="display:none;">
+            <div class="av-grid">
+                <img class="av-opt" data-seed="bot1" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot1">
+                <img class="av-opt" data-seed="bot2" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot2">
+                <img class="av-opt" data-seed="bot3" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot3">
+                <img class="av-opt" data-seed="bot4" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot4">
+                <img class="av-opt" data-seed="bot5" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot5">
+                <img class="av-opt" data-seed="bot6" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot6">
+            </div>
+        </div>
+
         <div class="input-linear-container">
             <div class="user-badge" id="my-badge">
-                <div class="avatar-slot">
+                <div class="avatar-slot" id="avatar-btn" title="Cambiar cara">
                     <img id="my-avatar-img" src="" alt="Avatar">
                 </div>
                 <input type="text" id="user-alias" placeholder="ALIAS" maxlength="12">
@@ -100,6 +113,6 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/script.js?v=17.0"></script>
+    <script src="js/script.js?v=20.0"></script>
 </body>
 </html>

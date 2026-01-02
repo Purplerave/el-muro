@@ -124,63 +124,35 @@ body {
 
 .act-btn.voted { background: var(--text-dark); color: #fff; border-color: var(--text-dark); }
 
-/* --- BARRA DE ENTRADA (SINGLE LINE) --- */
+/* --- AVATAR SELECTOR --- */
 
-#input-bar { 
+#avatar-selector { 
 
-    position: fixed; 
+    position: absolute; 
 
-    bottom: 25px; 
+    bottom: 75px; 
 
-    left: 50%; 
-
-    transform: translateX(-50%); 
-
-    width: 95%; 
-
-    max-width: 1100px; 
+    left: 20px; 
 
     background: #fff; 
 
-    border: 2px solid #000;
+    border: 3px solid #000; 
 
-    padding: 8px 15px; 
+    padding: 10px; 
 
-    border-radius: 50px; /* Estilo píldora */
+    border-radius: 20px; 
 
-    z-index: 2000;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-
-}
-
-
-
-.input-linear-container { 
-
-    display: flex; 
-
-    align-items: center; 
-
-    gap: 12px; 
-
-    width: 100%;
+    z-index: 2100;
 
 }
 
+.av-grid { display: flex; gap: 10px; }
 
+.av-opt { width: 40px; height: 40px; cursor: pointer; border-radius: 50%; border: 2px solid transparent; transition: 0.2s; }
 
-.user-badge { 
-
-    display: flex; 
-
-    align-items: center; 
-
-    gap: 8px; 
-
-    flex-shrink: 0;
-
-}
+.av-opt:hover { transform: scale(1.2); border-color: #000; }
 
 
 
@@ -198,7 +170,47 @@ body {
 
     overflow: hidden; 
 
+    cursor: pointer;
+
+    transition: 0.2s;
+
 }
+
+.avatar-slot:hover { transform: scale(1.1); }
+
+
+
+/* --- COMPACT FOOTER --- */
+
+#input-bar { 
+
+    position: fixed; 
+
+    bottom: 20px; 
+
+    left: 50%; 
+
+    transform: translateX(-50%); 
+
+    width: 98%; 
+
+    max-width: 1000px; 
+
+    background: #fff; 
+
+    border: 2px solid #000;
+
+    padding: 6px 12px; 
+
+    border-radius: 50px;
+
+    z-index: 2000;
+
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+
+}
+
+
 
 
 
