@@ -27,6 +27,7 @@ window.app = {
     state: { jokes: [], sort: 'new' },
     displayOrder: [],
     user: null,
+    fingerprint: null,
     isAdmin: false,
     adminClicks: 0,
     isMuted: false,
@@ -210,11 +211,12 @@ async function vote(id, type) {
 
     try {
         const field = type === 'best' ? 'votes_best' : 'votes_bad';
-        // Enviamos el joke_id, el campo y el ID del usuario (visitor_id)
+        // Enviamos ID de usuario Y huella digital del dispositivo
         const { error } = await client.rpc('increment_vote', { 
             joke_id: id, 
             field_name: field,
-            visitor_id: app.user.id 
+            visitor_id: app.user.id,
+            device_fp: app.fingerprint || app.user.id // Fallback por si la huella tarda
         });
         
         if (!error) { 
@@ -280,7 +282,14 @@ function sanitize(s) {
 }
 
 window.onload = function() {
-    console.log("Iniciando EL MURO V14.5 OPTIMIZED...");
+    console.log("Iniciando EL MURO V14.7 ANTI-FRAUDE...");
+    
+    // Inicializar Huella Digital
+    FingerprintJS.load().then(fp => fp.get()).then(result => {
+        app.fingerprint = result.visitorId;
+        console.log("Dispositivo Identificado");
+    });
+
     app.user = loadUser();
     cacheDOM();
     initDelegation();
