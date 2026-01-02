@@ -79,11 +79,37 @@ async function initGlobalSync() {
             app.state.jokes = res.data;
             syncWall();
             updateStats();
+            // RE-ACTIVAR DISPARADOR IA
+            checkDailyAIJoke();
         }
     } catch (e) { 
         console.error(e); 
         var errDisp = document.getElementById('error-display');
         if(errDisp) errDisp.style.display = 'block';
+    }
+}
+
+async function checkDailyAIJoke() {
+    var aiID = '00000000-0000-0000-0000-000000000000';
+    var jokes = app.state.jokes || [];
+    var lastAI = jokes.filter(function(j) { return j.authorid === aiID; })[0];
+    
+    // Si no hay chistes de la IA o el último es de hace más de 6 horas (21600000 ms)
+    if (!lastAI || (Date.now() - new Date(lastAI.ts).getTime() >= 21600000)) {
+        console.log("-> Solicitando chiste a la IA...");
+        try {
+            var res = await client.functions.invoke('generate-joke', { body: {} });
+            if (res.data && res.data.joke) {
+                await client.from('jokes').insert([{ 
+                    text: res.data.joke, 
+                    author: "Bot IA", 
+                    authorid: aiID, 
+                    color: "#fff9c4",
+                    avatar: "bot1"
+                }]);
+                initGlobalSync(); // Recargar para ver el chiste nuevo
+            }
+        } catch(e) { console.warn("IA ocupada o bloqueada"); }
     }
 }
 
