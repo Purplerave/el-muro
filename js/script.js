@@ -193,24 +193,42 @@ function createCard(joke) {
 
 window.shareAsImage = function(id) {
     var card = document.getElementById('joke-' + id);
-    if (!card) return;
+    if (!card) return showToast("No encuentro la tarjeta", "error");
 
-    showToast("Generando imagen...");
+    if (typeof html2canvas === 'undefined') {
+        return showToast("Cargando motor de imagen... espera 2s", "error");
+    }
+
+    showToast("Generando tarjeta viral...");
     
+    // Pequeño truco: forzar que las imágenes tengan permiso de lectura
+    var imgs = card.getElementsByTagName('img');
+    for(var i=0; i<imgs.length; i++) {
+        imgs[i].crossOrigin = "anonymous";
+    }
+
     html2canvas(card, {
-        backgroundColor: null,
-        scale: 2, // Alta calidad
-        logging: false,
-        useCORS: true // Para cargar los avatares externos
+        useCORS: true,
+        allowTaint: true,
+        scale: 2,
+        backgroundColor: "#ffffff", // Fondo blanco sólido por si acaso
+        logging: true
     }).then(function(canvas) {
-        var link = document.createElement('a');
-        link.download = 'chiste-malo.png';
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-        showToast("¡Imagen descargada!");
-    }).catch(function(e) {
-        console.error(e);
-        showToast("Error al crear imagen", "error");
+        try {
+            var link = document.createElement('a');
+            link.download = 'chiste-el-muro.png';
+            link.href = canvas.toDataURL("image/png");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("¡Imagen lista!");
+        } catch(e) {
+            console.error("DataURL Error:", e);
+            showToast("Brave bloquea la descarga", "error");
+        }
+    }).catch(function(err) {
+        console.error("Canvas Error:", err);
+        showToast("Error técnico al crear imagen", "error");
     });
 };
 
