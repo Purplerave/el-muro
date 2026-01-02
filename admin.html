@@ -48,6 +48,14 @@
     </header>
 
     <div class="container">
+        <div class="danger-bar" style="background: #e3f2fd; border-color: #2196f3;">
+            <div style="color: #0d47a1;">
+                <h2 style="color: #0d47a1;">🤖 GENERADOR IA</h2>
+                <p style="color: #1565c0; margin: 0;">Fuerza al bot a publicar un chiste malo ahora mismo.</p>
+            </div>
+            <button class="btn" style="background: #2196f3; color: white;" onclick="triggerAI()">LANZAR CHISTE IA</button>
+        </div>
+
         <div class="danger-bar">
             <div>
                 <h2>💀 PURGA TOTAL</h2>
@@ -108,6 +116,32 @@
                 `;
                 list.appendChild(item);
             });
+        }
+
+        async function triggerAI() {
+            if (!confirm("¿Quieres que la IA publique un chiste ahora?")) return;
+            showToast("Despertando a la IA...");
+            try {
+                const { data, error } = await client.functions.invoke('generate-joke', { body: { manual: true } });
+                if (error) throw error;
+                
+                // Si la función solo genera pero no inserta, lo insertamos nosotros
+                if (data && data.joke) {
+                    await client.from('jokes').insert([{ 
+                        text: data.joke, 
+                        author: "Bot IA", 
+                        authorid: "00000000-0000-0000-0000-000000000000", 
+                        color: "#fff9c4",
+                        avatar: "bot1"
+                    }]);
+                    showToast("¡Chiste IA publicado!");
+                    loadJokes();
+                } else {
+                    showToast("La IA no ha respondido con un chiste.");
+                }
+            } catch(e) {
+                alert("Error al invocar IA: " + e.message);
+            }
         }
 
         async function deleteJoke(id) {
