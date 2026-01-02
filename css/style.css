@@ -84,11 +84,17 @@ body { margin: 0; background: var(--bg-office); color: var(--text-dark); font-fa
 .rank-list li { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px dashed #ddd; font-weight: bold; }
 
 /* --- FOOTER --- */
-#input-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 95%; max-width: 1000px; background: #fff; border: 2px solid #000; padding: 10px 15px; border-radius: 50px; z-index: 4000; box-shadow: 0 10px 30px rgba(0,0,0,0.1); display: flex; align-items: center; }
-.input-linear-container { display: flex; align-items: center; gap: 10px; width: 100%; }
-.input-main { flex: 1; }
-#secret-input { width: 100%; border: none; font-family: var(--font-hand); font-size: 1.1rem; outline: none; }
-.send-btn { background: #000; color: #fff; border: none; padding: 10px 20px; font-family: var(--font-head); font-size: 1.2rem; border-radius: 30px; cursor: pointer; }
+#input-bar { 
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); 
+    width: 95%; max-width: 1000px; background: #fff; border: 2px solid #000; 
+    padding: 6px 15px; /* Reducido alto */
+    border-radius: 50px; z-index: 4000; box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+    display: flex; align-items: center; 
+}
+.input-linear-container { display: flex; align-items: center; gap: 8px; width: 100%; }
+.input-main { flex: 1; padding-left: 5px; }
+#secret-input { width: 100%; border: none; font-family: var(--font-hand); font-size: 1.05rem; outline: none; background: transparent; }
+.send-btn { background: #000; color: #fff; border: none; padding: 8px 18px; font-family: var(--font-head); font-size: 1.1rem; border-radius: 30px; cursor: pointer; flex-shrink: 0; }
 
 /* --- MOBILE OPTIMIZATION --- */
 @media (max-width: 768px) {
