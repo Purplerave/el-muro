@@ -187,4 +187,47 @@ window.onload = function() {
     }
 
     initGlobalSync();
+
+    // 6. FILTROS
+    var fb = document.querySelectorAll('.filter-btn');
+    for (var m=0; m<fb.length; m++) {
+        fb[m].onclick = function() {
+            for (var n=0; n<fb.length; n++) fb[n].classList.remove('active');
+            this.classList.add('active');
+            app.state.sort = this.dataset.sort;
+            freezeOrder();
+            syncWall();
+        };
+    }
 };
+
+function freezeOrder() {
+    var list = app.state.jokes || [];
+    if (app.state.sort === 'best') {
+        app.displayOrder = list.slice().sort(function(a,b) { return (b.votes_best || 0) - (a.votes_best || 0); });
+    } else if (app.state.sort === 'controversial') {
+        app.displayOrder = list.filter(function(j) { return (j.votes_bad || 0) > (j.votes_best || 0); }).sort(function(a,b) { return (b.votes_bad - b.votes_best) - (a.votes_bad - a.votes_best); }).slice(0, 3);
+    } else {
+        app.displayOrder = list.slice().sort(function(a,b) { return new Date(b.ts) - new Date(a.ts); });
+    }
+}
+
+function updateStats() {
+    var list = app.state.jokes || [];
+    
+    // LA PURGA
+    var worst = list.filter(function(j) { return (j.votes_bad || 0) > (j.votes_best || 0); }).sort(function(a,b) { return (b.votes_bad - b.votes_best) - (a.votes_bad - a.votes_best); }).slice(0, 3);
+    var pl = document.getElementById('purgatory-list');
+    if (pl) pl.innerHTML = worst.map(function(j) { 
+        var img = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (j.avatar || j.authorid || 'bot1');
+        return '<li><img src="'+img+'" style="width:20px;border-radius:50%;margin-right:10px;"> <span>' + sanitize(j.author) + '</span> <span style="color:#ff1744;margin-left:auto;">🍅 ' + (j.votes_bad || 0) + '</span></li>'; 
+    }).join('') || '<li>Todo limpio por ahora</li>';
+
+    // HALL OF FAME
+    var best = list.slice().sort(function(a,b) { return (b.votes_best || 0) - (a.votes_best || 0); }).slice(0, 5);
+    var hl = document.getElementById('humorists-list');
+    if (hl) hl.innerHTML = best.map(function(j) {
+        var img = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (j.avatar || j.authorid || 'bot1');
+        return '<li><img src="'+img+'" style="width:20px;border-radius:50%;margin-right:10px;"> <span>' + sanitize(j.author) + '</span> <span style="color:#ff9500;margin-left:auto;">🤣 ' + (j.votes_best || 0) + '</span></li>';
+    }).join('');
+}
