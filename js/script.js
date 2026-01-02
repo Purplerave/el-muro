@@ -1,5 +1,5 @@
 /**
- * EL MURO V13.8 - REPARACIÓN FINAL EMOJIS Y CARGA
+ * EL MURO V14.9 - MÁXIMA COMPATIBILIDAD (ES5)
  */
 
 var SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -9,12 +9,11 @@ var CONFIG = {
     USER_KEY: 'elMuro_v6_usr',
     STORAGE_KEY: 'elMuro_v6_db',
     AI_NAME: '00000000-0000-0000-0000-000000000000',
-    COOLDOWN_MS: 30000 // 30 segundos anti-spam
+    COOLDOWN_MS: 30000
 };
 
 var client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Herramienta de Debounce para búsqueda
 function debounce(func, wait) {
     var timeout;
     return function() {
@@ -26,22 +25,7 @@ function debounce(func, wait) {
     };
 }
 
-window.app = {
-    state: { jokes: [], sort: 'new' },
-    displayOrder: [],
-    user: null,
-    fingerprint: null,
-    isAdmin: false,
-    adminClicks: 0,
-    isMuted: false,
-    sounds: {
-        post: new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'),
-        laugh: new Audio('https://assets.mixkit.co/active_storage/sfx/2802/2802-preview.mp3'),
-        splat: new Audio('https://assets.mixkit.co/active_storage/sfx/2747/2747-preview.mp3'),
-        click: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3')
-    },
-    dom: {}
-};
+window.app = { state: { jokes: [], sort: 'new' }, displayOrder: [], user: null, fingerprint: null, isAdmin: false, adminClicks: 0, isMuted: false, sounds: { post: new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'), laugh: new Audio('https://assets.mixkit.co/active_storage/sfx/2802/2802-preview.mp3'), splat: new Audio('https://assets.mixkit.co/active_storage/sfx/2747/2747-preview.mp3'), click: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3') }, dom: {} };
 
 function playSfx(name) {
     if (app.isMuted) return;
@@ -66,7 +50,6 @@ function loadUser() {
         u = { id: genUUID(), voted: [], owned: [], alias: '', hasSaved: false };
         localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(u));
     }
-    console.log("Usuario cargado:", u.id);
     return u;
 }
 
@@ -92,22 +75,17 @@ function cacheDOM() {
 }
 
 async function initGlobalSync() {
-    console.log("Conexión Segura con EL MURO...");
+    console.log("Sincronizando Muro...");
     try {
-        const res = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(200);
+        var res = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(200);
         if (res.data) {
-            console.log("Datos recibidos:", res.data.length);
             app.state.jokes = res.data;
             freezeOrder();
             syncWall();
             checkDailyAIJoke();
             localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(res.data));
-        } else {
-            console.error("Error de acceso:", res.error);
         }
-    } catch (e) {
-        console.error("Excepción en sync:", e);
-    }
+    } catch (e) { console.error("Error Sync:", e); }
 
     client.channel('public:jokes').on('postgres_changes', { event: '*', schema: 'public', table: 'jokes' }, function(payload) {
         handleRealtime(payload);
@@ -153,7 +131,8 @@ function syncWall() {
     container.innerHTML = '';
     
     if (app.state.sort === 'controversial') {
-        var days = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate();
+        var now = new Date();
+        var days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate();
         var info = document.createElement('div');
         info.style.cssText = "grid-column:1/-1; background:#1a1a1a; border:2px dashed #ff1744; padding:20px; text-align:center; margin-bottom:20px;";
         info.innerHTML = '<h2 style="font-family:Bangers; color:#ff1744; font-size:2rem;">💀 MODO PURGA</h2><p style="color:#aaa;">Días para el juicio: '+days+'</p>';
@@ -213,32 +192,31 @@ async function vote(id, type) {
     playSfx(type === 'best' ? 'laugh' : 'splat');
 
     try {
-        const field = type === 'best' ? 'votes_best' : 'votes_bad';
-        // Enviamos ID de usuario Y huella digital del dispositivo
-        const { error } = await client.rpc('increment_vote', { 
+        var field = (type === 'best' ? 'votes_best' : 'votes_bad');
+        var res = await client.rpc('increment_vote', { 
             joke_id: id, 
             field_name: field,
             visitor_id: app.user.id,
-            device_fp: app.fingerprint || app.user.id // Fallback por si la huella tarda
+            device_fp: app.fingerprint || app.user.id 
         });
         
-        if (!error) { 
+        if (!res.error) { 
             app.user.voted.push(id);
             localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(app.user)); 
         } else {
-            if (error.message.includes('VOTO_DUPLICADO')) {
-                showToast('Ya has votado (DB check)');
-                app.user.voted.push(id); // Sincronizamos localmente para que no lo intente más
+            if (res.error.message && res.error.message.indexOf('VOTO_DUPLICADO') !== -1) {
+                showToast('Ya has votado');
+                app.user.voted.push(id);
                 localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(app.user)); 
             }
         }
-    } catch(e) { console.error("Error votando:", e); }
+    } catch(e) { console.error("Error voto:", e); }
 }
 
 async function postJoke() {
-    const lastPost = localStorage.getItem('last_post_time') || 0;
-    if (Date.now() - lastPost < CONFIG.COOLDOWN_MS) {
-        return showToast('¡Frena! Un chiste cada 30 seg.');
+    var lastPostTime = localStorage.getItem('last_post_time') || 0;
+    if (Date.now() - lastPostTime < CONFIG.COOLDOWN_MS) {
+        return showToast('Espera 30 seg.');
     }
 
     var text = app.dom.input.value.trim();
@@ -249,7 +227,7 @@ async function postJoke() {
     try {
         var dot = document.querySelector('.dot.active');
         var color = dot ? dot.dataset.color : '#FFEB3B';
-        const res = await client.from('jokes').insert([{ text: text, author: alias, authorid: app.user.id, color: color, rot: 1, votes_best: 0, votes_bad: 0 }]).select();
+        var res = await client.from('jokes').insert([{ text: text, author: alias, authorid: app.user.id, color: color, rot: 1, votes_best: 0, votes_bad: 0 }]).select();
         
         if (!res.error) { 
             playSfx('post');
@@ -258,19 +236,18 @@ async function postJoke() {
             app.user.owned.push(res.data[0].id); 
             localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(app.user)); 
             showToast('¡Pegado!'); 
-        } else {
-            showToast('Error al publicar');
         }
-    } catch(e) { showToast('Error de red'); }
+    } catch(e) { showToast('Error red'); }
     app.dom.postBtn.disabled = false;
 }
 
 function searchJokes(term) {
     var t = term.toLowerCase();
-    document.querySelectorAll('.post-it').forEach(function(card) {
-        var content = card.querySelector('.post-body').textContent.toLowerCase();
-        card.style.display = content.indexOf(t) !== -1 ? 'block' : 'none';
-    });
+    var cards = document.querySelectorAll('.post-it');
+    for (var i=0; i<cards.length; i++) {
+        var content = cards[i].querySelector('.post-body').textContent.toLowerCase();
+        cards[i].style.display = content.indexOf(t) !== -1 ? 'block' : 'none';
+    }
 }
 
 function showToast(m) {
@@ -281,19 +258,20 @@ function showToast(m) {
 
 function sanitize(s) { 
     if(!s) return "";
-    return s.replace(/[<>\"']/g, '').substring(0, 300); 
+    return s.replace(/[<>"']/g, '').substring(0, 300); 
 }
 
 window.onload = function() {
-    console.log("Iniciando EL MURO V14.8 COMPATIBILITY...");
+    console.log("Iniciando EL MURO V14.9 SAFE...");
     
-    // Inicializar Huella Digital (Sintaxis Clásica)
-    FingerprintJS.load().then(function(fp) { 
-        return fp.get(); 
-    }).then(function(result) {
-        app.fingerprint = result.visitorId;
-        console.log("Dispositivo Identificado");
-    });
+    try {
+        FingerprintJS.load().then(function(fp) { 
+            return fp.get(); 
+        }).then(function(result) {
+            app.fingerprint = result.visitorId;
+            console.log("ID OK");
+        }).catch(function(e){ console.warn("FP Error"); });
+    } catch(e) {}
 
     app.user = loadUser();
     cacheDOM();
@@ -301,10 +279,9 @@ window.onload = function() {
     app.dom.postBtn.onclick = postJoke;
     app.dom.input.oninput = function(e) { app.dom.charCounter.innerText = e.target.value.length + '/300'; };
     
-    // Búsqueda con Debounce (Sintaxis Clásica)
     var debouncedSearch = debounce(function(val) { searchJokes(val); }, 300);
     app.dom.searchInput.oninput = function(e) { debouncedSearch(e.target.value); };
-    app.dom.searchInput.oninput = function(e) { debouncedSearch(e.target.value); };
+
     app.dom.filters.forEach(function(btn) {
         btn.onclick = function() {
             playSfx('click');
@@ -336,7 +313,7 @@ async function checkDailyAIJoke() {
     var lastAI = app.state.jokes.filter(function(j) { return j.authorid === CONFIG.AI_NAME; })[0];
     if (!lastAI || (Date.now() - new Date(lastAI.ts).getTime() >= 21600000)) {
         try {
-            const res = await client.functions.invoke('generate-joke', { body: { memory: "" } });
+            var res = await client.functions.invoke('generate-joke', { body: { memory: "" } });
             if (res.data && res.data.joke) await client.from('jokes').insert([{ text: res.data.joke, author: "Bot", authorid: CONFIG.AI_NAME, color: "#FFEB3B", rot: 1, votes_best: 0, votes_bad: 0 }]);
         } catch(e) {}
     }
@@ -347,11 +324,4 @@ function updateStats() {
     if (app.dom.purgList) app.dom.purgList.innerHTML = worst.map(function(j) { return '<li><img src="https://api.dicebear.com/7.x/bottts/svg?seed=' + (j.authorid || j.author) + '" style="width:20px;height:20px;border-radius:50%;margin-right:10px;"> <span>' + j.author + '</span> <span style="color:#ff1744">🍅 ' + j.votes_bad + '</span></li>'; }).join('') || '<li>Libre</li>';
     var best = app.state.jokes.slice().sort(function(a,b) { return (b.votes_best || 0) - (a.votes_best || 0); }).slice(0, 5);
     if (app.dom.humorList) app.dom.humorList.innerHTML = best.map(function(j) { return '<li><img src="https://api.dicebear.com/7.x/bottts/svg?seed=' + (j.authorid || j.author) + '" style="width:20px;height:20px;border-radius:50%;margin-right:10px;"> <span>' + j.author + '</span> <span style="color:var(--accent)">🤣 ' + (j.votes_best || 0) + '</span></li>'; }).join('');
-}
-
-async function shareJoke(id) {
-    var joke = app.state.jokes.find(function(j) { return j.id === id; });
-    var txt = '"' + joke.text + '" - en EL MURO';
-    if (navigator.share) await navigator.share({ title: 'EL MURO', text: txt, url: window.location.href });
-    else window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(txt));
 }
