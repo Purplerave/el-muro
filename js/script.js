@@ -16,10 +16,13 @@ var client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Herramienta de Debounce para búsqueda
 function debounce(func, wait) {
-    let timeout;
-    return function(...args) {
+    var timeout;
+    return function() {
+        var context = this, args = arguments;
         clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
+        timeout = setTimeout(function() {
+            func.apply(context, args);
+        }, wait);
     };
 }
 
@@ -282,10 +285,12 @@ function sanitize(s) {
 }
 
 window.onload = function() {
-    console.log("Iniciando EL MURO V14.7 ANTI-FRAUDE...");
+    console.log("Iniciando EL MURO V14.8 COMPATIBILITY...");
     
-    // Inicializar Huella Digital
-    FingerprintJS.load().then(fp => fp.get()).then(result => {
+    // Inicializar Huella Digital (Sintaxis Clásica)
+    FingerprintJS.load().then(function(fp) { 
+        return fp.get(); 
+    }).then(function(result) {
         app.fingerprint = result.visitorId;
         console.log("Dispositivo Identificado");
     });
@@ -296,8 +301,9 @@ window.onload = function() {
     app.dom.postBtn.onclick = postJoke;
     app.dom.input.oninput = function(e) { app.dom.charCounter.innerText = e.target.value.length + '/300'; };
     
-    // Búsqueda con Debounce de 300ms para no saturar
-    const debouncedSearch = debounce((val) => searchJokes(val), 300);
+    // Búsqueda con Debounce (Sintaxis Clásica)
+    var debouncedSearch = debounce(function(val) { searchJokes(val); }, 300);
+    app.dom.searchInput.oninput = function(e) { debouncedSearch(e.target.value); };
     app.dom.searchInput.oninput = function(e) { debouncedSearch(e.target.value); };
     app.dom.filters.forEach(function(btn) {
         btn.onclick = function() {
