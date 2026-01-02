@@ -222,15 +222,81 @@ body {
 
 .color-picker { 
 
+
+
     display: flex; 
 
-    gap: 5px; 
+
+
+    gap: 8px; 
+
+
 
     flex-shrink: 0;
 
+
+
 }
 
-.dot { width: 18px; height: 18px; border: 1px solid #000; }
+
+
+.dot { 
+
+
+
+    width: 22px; 
+
+
+
+    height: 22px; 
+
+
+
+    border: 2px solid #000; 
+
+
+
+    border-radius: 50%;
+
+
+
+    background: var(--c);
+
+
+
+    cursor: pointer;
+
+
+
+    transition: 0.2s;
+
+
+
+}
+
+
+
+.dot.active {
+
+
+
+    transform: scale(1.2);
+
+
+
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+
+
+
+    border-color: #000;
+
+
+
+}
+
+
+
+
 
 
 
