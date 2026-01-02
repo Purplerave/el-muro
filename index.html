@@ -3,14 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#121212">
     <title>EL MURO | Chistes Malos AI</title>
-    <link rel="stylesheet" href="css/style.css?v=30.1">
+    
+    <meta property="og:title" content="EL MURO DE LOS CHISTES MALOS 🧱">
+    <meta property="og:description" content="La comunidad de los peores chistes de internet. ¿Podrás sobrevivir a la Purga?">
+    <meta property="og:image" content="assets/preview.png">
+
+    <link rel="stylesheet" href="css/style.css?v=31.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Kalam:wght@400;700&family=Inter:wght@400;900&display=swap" rel="stylesheet">
+    <script src="https://openfpcdn.io/fingerprintjs/v4"></script>
 </head>
 <body>
+
     <div id="toast-container"></div>
+    
     <header class="main-header">
         <div class="header-inner">
             <div class="header-top-row">
@@ -18,77 +27,76 @@
                     <span class="top-line">EL MURO DE LOS</span>
                     <span class="bot-line">CHISTES MALOS</span>
                 </h1>
-                                <div class="header-controls">
-                                    <input type="text" id="search-input" placeholder="🔍 Buscar..." class="search-bar">
-                                    <button id="mute-btn" class="icon-btn">🔊</button>
-                                </div>
-                            </div>
-                            
-                            <div class="filter-bar">
-                                <button class="filter-btn active" data-sort="new">NUEVOS</button>
-                                <button class="filter-btn" data-sort="best">TOP 🔥</button>
-                                <button class="filter-btn btn-trigger-dash" data-sort="controversial">💀 PURGA</button>
-                            </div>
-                        </div>
-                    </header>
                 
+                <div class="header-controls">
+                    <input type="text" id="search-input" placeholder="🔍 Buscar chiste..." class="search-bar" aria-label="Buscar chistes">
+                    <button id="mute-btn" class="icon-btn" title="Silenciar/Activar sonido">🔊</button>
+                    <button id="mobile-dash-toggle" class="icon-btn mobile-only" aria-label="Abrir clasificación">🏆</button>
+                </div>
+            </div>
+            
+            <nav class="filter-bar">
+                <button class="filter-btn active" data-sort="new">NUEVOS</button>
+                <button class="filter-btn" data-sort="best">TOP 🔥</button>
+                <button class="filter-btn" data-sort="controversial">💀 PURGA</button>
+            </nav>
+        </div>
+    </header>
 
     <div id="main-layout">
         <main id="mural-wrapper">
             <div id="mural" class="auto-grid">
                 <div class="skeleton"></div>
                 <div class="skeleton"></div>
+                <div class="skeleton"></div>
             </div>
         </main>
+
         <aside id="dashboard" aria-hidden="true">
-            <button id="close-dash-btn">✕</button>
+            <button id="close-dash-btn" class="icon-btn mobile-only" aria-label="Cerrar">✕</button>
             <div class="dashboard-content">
-                <div class="dash-section danger-zone">
-                    <h3>💀 EL JUICIO FINAL</h3>
-                    <p style="font-size: 0.85rem; color: #555;">Los 3 peores chistes del mes irán a juicio.</p>
-                    <div id="purgatory-status" style="margin-top: 10px; font-weight: 900;"></div>
-                </div>
-                <div class="dash-section">
+                <section class="dash-section danger-zone">
+                    <h3>💀 LA PURGA</h3>
+                    <p class="dash-desc">Los 3 peores chistes van a juicio. Los que no se salven serán eliminados.</p>
+                    <div id="purgatory-status"></div>
+                    <ul id="purgatory-list" class="rank-list"></ul>
+                </section>
+
+                <section class="dash-section">
                     <h3>🏆 HALL OF FAME</h3>
                     <ul id="humorists-list" class="rank-list"></ul>
-                </div>
-                <div class="dash-section">
-                    <h3>🥀 SENTENCIADOS</h3>
-                    <ul id="purgatory-list" class="rank-list"></ul>
-                </div>
+                </section>
             </div>
         </aside>
     </div>
 
     <footer id="input-bar">
-        <div id="avatar-selector" style="display:none;">
-            <div class="av-grid">
-                <img class="av-opt" data-seed="bot1" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot1">
-                <img class="av-opt" data-seed="bot2" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot2">
-                <img class="av-opt" data-seed="bot3" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot3">
-                <img class="av-opt" data-seed="bot4" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot4">
-                <img class="av-opt" data-seed="bot5" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot5">
-                <img class="av-opt" data-seed="bot6" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot6">
-            </div>
-        </div>
+        <div id="error-display" class="error-banner" style="display:none;">Error de conexión. Reintentando...</div>
         <div class="input-linear-container">
             <div class="user-badge">
-                <div class="avatar-slot" id="avatar-btn"><img id="my-avatar-img" src="" alt="Avatar"></div>
+                <div class="avatar-slot" id="avatar-btn">
+                    <img id="my-avatar-img" src="" alt="Tu Avatar">
+                </div>
                 <input type="text" id="user-alias" placeholder="ALIAS" maxlength="12">
             </div>
-            <div class="color-picker">
-                <button class="dot active" style="--c:#fff9c4" data-color="#fff9c4"></button>
-                <button class="dot" style="--c:#ffccbc" data-color="#ffccbc"></button>
-                <button class="dot" style="--c:#c8e6c9" data-color="#c8e6c9"></button>
-                <button class="dot" style="--c:#b3e5fc" data-color="#b3e5fc"></button>
+
+            <div class="color-picker" id="color-dots">
+                <button class="dot active" style="--c:#fff9c4" data-color="#fff9c4" aria-label="Amarillo"></button>
+                <button class="dot" style="--c:#ffccbc" data-color="#ffccbc" aria-label="Naranja"></button>
+                <button class="dot" style="--c:#c8e6c9" data-color="#c8e6c9" aria-label="Verde"></button>
+                <button class="dot" style="--c:#b3e5fc" data-color="#b3e5fc" aria-label="Azul"></button>
             </div>
-            <div class="input-main"><input type="text" id="secret-input" placeholder="¡Pega tu chiste aquí...!" maxlength="300"></div>
+
+            <div class="input-main">
+                <input type="text" id="secret-input" placeholder="¡Pega tu chiste aquí...!" maxlength="300">
+                <span id="char-counter">0/300</span>
+            </div>
+            
             <button id="post-btn" class="send-btn">PEGAR</button>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <script src="js/script.js?v=28.2"></script>
+    <script src="js/script.js?v=31.0"></script>
 </body>
 </html>
