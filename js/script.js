@@ -8,10 +8,20 @@ var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSI
 var CONFIG = {
     USER_KEY: 'elMuro_v6_usr',
     STORAGE_KEY: 'elMuro_v6_db',
-    AI_NAME: '00000000-0000-0000-0000-000000000000'
+    AI_NAME: '00000000-0000-0000-0000-000000000000',
+    COOLDOWN_MS: 30000 // 30 segundos anti-spam
 };
 
 var client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Herramienta de Debounce para búsqueda
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
 
 window.app = {
     state: { jokes: [], sort: 'new' },
@@ -196,39 +206,47 @@ async function vote(id, type) {
     if (app.user.voted.indexOf(id) !== -1) return showToast('Ya has votado');
     if (app.user.owned.indexOf(id) !== -1) return showToast('Es tu chiste');
     
-    // Sonido inmediato para feedback táctil
     playSfx(type === 'best' ? 'laugh' : 'splat');
 
-    var joke = app.state.jokes.find(function(j) { return j.id === id; });
-    var field = type === 'best' ? 'votes_best' : 'votes_bad';
     try {
-        const res = await client.from('jokes').update({ [field]: (joke[field] || 0) + 1 }).eq('id', id);
-        if (!res.error) { 
+        const field = type === 'best' ? 'votes_best' : 'votes_bad';
+        const { error } = await client.rpc('increment_vote', { joke_id: id, field_name: field });
+        
+        if (!error) { 
             app.user.voted.push(id);
             localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(app.user)); 
-            refreshData(); 
+            // La actualización visual vendrá por Realtime
         }
-    } catch(e) {}
+    } catch(e) { console.error("Error votando:", e); }
 }
 
 async function postJoke() {
+    const lastPost = localStorage.getItem('last_post_time') || 0;
+    if (Date.now() - lastPost < CONFIG.COOLDOWN_MS) {
+        return showToast('¡Frena! Un chiste cada 30 seg.');
+    }
+
     var text = app.dom.input.value.trim();
     var alias = app.dom.alias.value.trim();
     if (!alias || text.length < 3) return showToast('Escribe algo...');
+    
     app.dom.postBtn.disabled = true;
     try {
         var dot = document.querySelector('.dot.active');
         var color = dot ? dot.dataset.color : '#FFEB3B';
         const res = await client.from('jokes').insert([{ text: text, author: alias, authorid: app.user.id, color: color, rot: 1, votes_best: 0, votes_bad: 0 }]).select();
+        
         if (!res.error) { 
             playSfx('post');
             app.dom.input.value = ''; 
+            localStorage.setItem('last_post_time', Date.now());
             app.user.owned.push(res.data[0].id); 
             localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(app.user)); 
-            refreshData(); 
-            showToast('Pegado!'); 
+            showToast('¡Pegado!'); 
+        } else {
+            showToast('Error al publicar');
         }
-    } catch(e) {}
+    } catch(e) { showToast('Error de red'); }
     app.dom.postBtn.disabled = false;
 }
 
@@ -246,22 +264,22 @@ function showToast(m) {
     if(c) { c.appendChild(t); setTimeout(function() { if(t.parentNode) t.remove(); }, 2500); }
 }
 
-function sanitize(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-
-function isPurgeActive() {
-    var now = new Date();
-    var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    return (lastDay - now.getDate()) <= 3;
+function sanitize(s) { 
+    if(!s) return "";
+    return s.replace(/[<>\"']/g, '').substring(0, 300); 
 }
 
 window.onload = function() {
-    console.log("Iniciando EL MURO V13.8...");
+    console.log("Iniciando EL MURO V14.5 OPTIMIZED...");
     app.user = loadUser();
     cacheDOM();
     initDelegation();
     app.dom.postBtn.onclick = postJoke;
     app.dom.input.oninput = function(e) { app.dom.charCounter.innerText = e.target.value.length + '/300'; };
-    app.dom.searchInput.oninput = function(e) { searchJokes(e.target.value); };
+    
+    // Búsqueda con Debounce de 300ms para no saturar
+    const debouncedSearch = debounce((val) => searchJokes(val), 300);
+    app.dom.searchInput.oninput = function(e) { debouncedSearch(e.target.value); };
     app.dom.filters.forEach(function(btn) {
         btn.onclick = function() {
             playSfx('click');
