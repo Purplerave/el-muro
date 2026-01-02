@@ -130,33 +130,49 @@ body {
     bottom: 25px; 
     left: 50%; 
     transform: translateX(-50%); 
-    width: 90%; 
+    width: 95%; 
     max-width: 900px; 
     background: #fff; 
-    border: 2px solid var(--text-dark);
+    border: 3px solid #000;
     padding: 15px; 
     border-radius: 15px; 
     z-index: 2000;
-    box-shadow: 10px 10px 0px rgba(0,0,0,0.1);
+    box-shadow: 8px 8px 0px rgba(0,0,0,0.1);
 }
 
-.input-linear-container { display: flex; align-items: center; gap: 15px; }
+.input-linear-container { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 15px; 
+}
 
-/* FIX AVATAR FOOTER */
-.user-badge { display: flex; align-items: center; gap: 10px; }
+.row-1-mobile { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    width: 100%;
+}
+
+.user-badge { 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+}
+
 .avatar-slot { 
-    width: 40px; 
-    height: 40px; 
+    width: 45px !important; 
+    height: 45px !important; 
     border-radius: 50%; 
     border: 2px solid #000; 
-    background: #fff; 
+    background: #eee; 
     overflow: hidden; 
-    flex-shrink: 0;
+    display: block !important;
 }
+
 .avatar-slot img { 
     width: 100% !important; 
     height: 100% !important; 
-    display: block !important; 
+    display: block !important;
 }
 #user-alias { 
     background: transparent; 

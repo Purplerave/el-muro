@@ -315,7 +315,9 @@ window.onload = function() {
     }
 
     if(app.dom.avatarImg) {
-        app.dom.avatarImg.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + app.user.id;
+        setTimeout(function() {
+            app.dom.avatarImg.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + app.user.id;
+        }, 100);
     }
 
     initGlobalSync();
