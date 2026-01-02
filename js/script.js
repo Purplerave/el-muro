@@ -1,5 +1,5 @@
 /**
- * EL MURO V32.0 - MASTER FUSION
+ * EL MURO V33.0 - ELIMINACIÓN DE CACHE Y BLOQUEO ANÓNIMO
  */
 
 var SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -87,13 +87,16 @@ async function checkDailyAIJoke() {
             var resFact = await client.from('joke_factory').select('*').eq('used', false).limit(1);
             if (resFact.data && resFact.data.length > 0) {
                 var candidate = resFact.data[0];
-                var resInsert = await client.from('jokes').insert([{ 
-                    text: candidate.text, author: "Bot IA", authorid: aiID, 
-                    color: candidate.color || "#fff9c4", avatar: candidate.avatar || "bot1"
-                }]);
-                if (!resInsert.error) {
-                    await client.from('joke_factory').update({ used: true }).eq('id', candidate.id);
-                    initGlobalSync();
+                var check = await client.rpc('check_joke_originality', { new_content: candidate.text });
+                if (check.data === true) {
+                    var resInsert = await client.from('jokes').insert([{ 
+                        text: candidate.text, author: "Bot IA", authorid: aiID, 
+                        color: candidate.color || "#fff9c4", avatar: candidate.avatar || "bot1"
+                    }]);
+                    if (!resInsert.error) {
+                        await client.from('joke_factory').update({ used: true }).eq('id', candidate.id);
+                        initGlobalSync();
+                    }
                 }
             }
         } catch(e) {}
@@ -105,7 +108,6 @@ function syncWall() {
     if(!container) return;
     container.innerHTML = '';
     var list = app.state.jokes.slice();
-    
     if (app.state.filterTerm) {
         var term = app.state.filterTerm.toLowerCase();
         list = list.filter(function(j) {
@@ -113,20 +115,16 @@ function syncWall() {
                    (j.author && j.author.toLowerCase().indexOf(term) !== -1);
         });
     }
-
     if (app.state.sort === 'best') {
         list.sort(function(a,b){ return (b.votes_best||0)-(a.votes_best||0); });
     } else if (app.state.sort === 'controversial') {
         list = list.filter(function(j){ return (j.votes_bad||0) > (j.votes_best||0); });
         list.sort(function(a,b){ return (b.votes_bad||0)-(a.votes_bad||0); });
     }
-
     if (list.length === 0) {
         container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:50px; color:#aaa;"><h2>VACÍO</h2></div>';
     } else {
-        for(var i=0; i<list.length; i++) {
-            container.appendChild(createCard(list[i]));
-        }
+        for(var i=0; i<list.length; i++) { container.appendChild(createCard(list[i])); }
     }
 }
 
@@ -141,7 +139,7 @@ function createCard(joke) {
 
     el.innerHTML = '<div class="post-body">' + sanitize(joke.text) + '</div>' +
         '<div class="post-footer">' +
-            '<div class="author-info"><img src="' + authorImg + '"> ' + sanitize(joke.author) + '</div>' +
+            '<div class="author-info"><img src="' + authorImg + '" style="width:24px;height:24px;border-radius:50%;background:#fff;border:1px solid #eee;margin-right:5px;"> ' + sanitize(joke.author) + '</div>' +
             '<div class="actions">' +
                 '<button class="act-btn btn-share" data-id="' + joke.id + '">📸</button>' +
                 '<button class="act-btn btn-vote ' + vClass + '" data-id="' + joke.id + '" data-type="best">🤣 ' + (joke.votes_best||0) + '</button>' +
@@ -184,24 +182,23 @@ async function postJoke() {
     var aliasInput = document.getElementById('user-alias');
     var alias = aliasInput ? aliasInput.value.trim() : "";
 
-    // BLOQUEO ABSOLUTO SIN ALIAS
-    if (!alias || alias.length < 2) {
-        showToast('¡Escribe tu ALIAS (mín. 2 letras) para poder pegar!', 'error');
+    // BLOQUEO ABSOLUTO: SIN ALIAS NO HAY PEGADO
+    if (alias.length < 2) {
+        showToast('¡Escribe tu ALIAS primero!', 'error');
         if(aliasInput) aliasInput.focus();
-        return;
+        return; 
     }
 
-    if (txt.length < 3) return showToast('¡El chiste es demasiado corto!', 'error');
+    if (txt.length < 3) return showToast('Chiste muy corto', 'error');
     
-    // Desactivar botón para evitar doble clic
     var btn = document.getElementById('post-btn');
     if(btn) btn.disabled = true;
 
     try {
-        var check = await client.rpc('check_joke_originality', { new_content: txt });
-        if (check.data === false) {
+        var checkRes = await client.rpc('check_joke_originality', { new_content: txt });
+        if (checkRes.data === false) {
             if(btn) btn.disabled = false;
-            return showToast('Ese chiste ya está en el muro...', 'error');
+            return showToast('Ese ya está en el muro', 'error');
         }
 
         var dot = document.querySelector('.dot.active');
@@ -217,8 +214,7 @@ async function postJoke() {
             if (!res.error) { 
                 input.value = ''; 
                 playSound('post'); 
-                showToast('¡Chiste pegado!'); 
-                // Guardar el alias exitoso
+                showToast('¡Pegado!'); 
                 app.user.alias = alias;
                 localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user));
                 initGlobalSync(); 
@@ -227,7 +223,7 @@ async function postJoke() {
         });
     } catch(e) {
         if(btn) btn.disabled = false;
-        showToast('Error de red', 'error');
+        showToast('Error red', 'error');
     }
 }
 
@@ -240,7 +236,8 @@ function updateStats() {
     var pl = document.getElementById('purgatory-list');
     if (pl) pl.innerHTML = worst.map(function(j) { return '<li><span>' + sanitize(j.author) + '</span> <span style="color:#ff1744;margin-left:auto;">🍅 ' + (j.votes_bad||0) + '</span></li>'; }).join('') || '<li>Limpio</li>';
     var now = new Date();
-    var daysLeft = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate();
+    var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    var daysLeft = lastDay - now.getDate();
     var ps = document.getElementById('purgatory-status');
     if (ps) ps.innerHTML = '<p style="color:#888;">Faltan ' + daysLeft + ' días.</p>';
 }
@@ -282,7 +279,8 @@ window.onload = function() {
     var dots = document.querySelectorAll('.dot');
     for (var j=0; j<dots.length; j++) {
         dots[j].onclick = function() {
-            for (var k=0; k<dots.length; k++) dots[k].classList.remove('active');
+            var all = document.querySelectorAll('.dot');
+            for (var k=0; k<all.length; k++) all[k].classList.remove('active');
             this.classList.add('active');
         };
     }
@@ -290,7 +288,8 @@ window.onload = function() {
     var filters = document.querySelectorAll('.filter-btn');
     for (var f=0; f<filters.length; f++) {
         filters[f].onclick = function() {
-            for (var x=0; x<filters.length; x++) filters[x].classList.remove('active');
+            var allF = document.querySelectorAll('.filter-btn');
+            for (var x=0; x<allF.length; x++) allF[x].classList.remove('active');
             this.classList.add('active');
             app.state.sort = this.dataset.sort;
             syncWall();
