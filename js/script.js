@@ -40,6 +40,7 @@ async function initGlobalSync() {
         var res = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(200);
         if (res.data) {
             app.state.jokes = res.data;
+            freezeOrder();
             syncWall();
         }
     } catch (e) { console.error(e); }
@@ -49,13 +50,19 @@ function syncWall() {
     var c = document.getElementById('mural');
     if(!c) return;
     c.innerHTML = '';
-    var list = app.state.jokes;
-    if (app.state.sort === 'best') {
-        list = list.slice().sort(function(a,b){ return (b.votes_best||0)-(a.votes_best||0); });
+    
+    // Usamos el orden oficial congelado
+    var list = app.displayOrder || [];
+    
+    if (list.length === 0) {
+        c.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:50px;"><h2>CARGANDO EL MURO...</h2></div>';
+    } else {
+        for (var i=0; i<list.length; i++) {
+            c.appendChild(createCard(list[i]));
+        }
     }
-    for (var i=0; i<list.length; i++) {
-        c.appendChild(createCard(list[i]));
-    }
+    // ¡ACTUALIZAR DASHBOARD SIEMPRE!
+    updateStats();
 }
 
 function createCard(joke) {
