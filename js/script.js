@@ -96,9 +96,16 @@ async function checkDailyAIJoke() {
     
     // Si no hay chistes de la IA o el último es de hace más de 6 horas (21600000 ms)
     if (!lastAI || (Date.now() - new Date(lastAI.ts).getTime() >= 21600000)) {
-        console.log("-> Solicitando chiste a la IA...");
+        console.log("-> Solicitando chiste con memoria...");
+        
+        // RECOPILAR MEMORIA (Últimos 10 chistes para no repetir)
+        var memory = jokes.slice(0, 10).map(function(j) { return j.text; }).join(" | ");
+
         try {
-            var res = await client.functions.invoke('generate-joke', { body: {} });
+            var res = await client.functions.invoke('generate-joke', { 
+                body: { memory: memory } 
+            });
+            
             if (res.data && res.data.joke) {
                 await client.from('jokes').insert([{ 
                     text: res.data.joke, 
