@@ -1,5 +1,5 @@
 /**
- * EL MURO V23.0 - ESTABILIDAD ABSOLUTA
+ * EL MURO V24.0 - FUNCIONALIDAD COMPLETA Y RECUPERADA
  */
 
 var SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -10,8 +10,20 @@ var client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 window.app = {
     state: { jokes: [], sort: 'new' },
     user: null,
-    isMuted: false
+    isMuted: false,
+    sounds: {}
 };
+
+// Carga de sonidos segura para Brave
+function initSounds() {
+    try {
+        app.sounds = {
+            post: new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'),
+            laugh: new Audio('https://assets.mixkit.co/active_storage/sfx/2802/2802-preview.mp3'),
+            splat: new Audio('https://assets.mixkit.co/active_storage/sfx/2747/2747-preview.mp3')
+        };
+    } catch(e) { console.warn("Sonidos bloqueados"); }
+}
 
 function genUUID() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -31,18 +43,15 @@ function loadUser() {
 }
 
 async function initGlobalSync() {
-    console.log("-> Descargando datos de Supabase...");
+    console.log("-> Sincronizando datos...");
     try {
         var res = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(200);
         if (res.data) {
-            console.log("-> Datos recibidos: " + res.data.length);
             app.state.jokes = res.data;
             syncWall();
-            updateStats(); // ¡CRÍTICO: Rellenar Dashboard!
-        } else {
-            console.error("-> Error Supabase:", res.error);
+            updateStats();
         }
-    } catch (e) { console.error("-> Error de red:", e); }
+    } catch (e) { console.error("Error de conexión:", e); }
 }
 
 function syncWall() {
@@ -52,7 +61,6 @@ function syncWall() {
     
     var list = app.state.jokes || [];
     
-    // Ordenar según filtro
     if (app.state.sort === 'best') {
         list = list.slice().sort(function(a,b){ return (b.votes_best||0)-(a.votes_best||0); });
     } else if (app.state.sort === 'controversial') {
@@ -60,7 +68,7 @@ function syncWall() {
     }
 
     if (list.length === 0) {
-        c.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:50px;"><h2>EL MURO ESTÁ VACÍO</h2></div>';
+        c.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:50px; color:#aaa;"><h2>EL MURO ESTÁ ESPERANDO TU CHISTE</h2></div>';
     } else {
         for (var i=0; i<list.length; i++) {
             c.appendChild(createCard(list[i]));
@@ -76,10 +84,10 @@ function createCard(joke) {
     
     el.innerHTML = '<div class="post-body">' + sanitize(joke.text) + '</div>' +
         '<div class="post-footer">' + 
-            '<div class="author-info"><img src="' + authorImg + '" style="width:24px;border-radius:50%;background:#fff;border:1px solid #eee;margin-right:5px;"> ' + sanitize(joke.author) + '</div>' + 
+            '<div class="author-info"><img src="' + authorImg + '" style="width:24px;height:24px;border-radius:50%;background:#fff;border:1px solid #eee;margin-right:5px;"> ' + sanitize(joke.author) + '</div>' + 
             '<div class="actions">' + 
-                '<button class="act-btn" onclick="vote(\"' + joke.id + '\",\'best\'")">🤣 '+(joke.votes_best||0)+'</button>' + 
-                '<button class="act-btn" onclick="vote(\"' + joke.id + '\",\'bad\'")">🍅 '+(joke.votes_bad||0)+'</button>' + 
+                '<button class="act-btn" onclick="vote(\"' + joke.id + '\",\\'best\\")">🤣 '+(joke.votes_best||0)+'</button>' + 
+                '<button class="act-btn" onclick="vote(\"' + joke.id + '\",\\'bad\\")">🍅 '+(joke.votes_bad||0)+'</button>' + 
             '</div>' + 
         '</div>';
     return el;
@@ -87,9 +95,18 @@ function createCard(joke) {
 
 async function vote(id, type) {
     if ((app.user.voted || []).indexOf(id) !== -1) return alert('Ya has votado');
+    if (app.sounds[type === 'best' ? 'laugh' : 'splat']) {
+        try { app.sounds[type === 'best' ? 'laugh' : 'splat'].play(); } catch(e){}
+    }
+
     try {
         var field = (type === 'best' ? 'votes_best' : 'votes_bad');
-        var res = await client.rpc('increment_vote', { joke_id: id, field_name: field, visitor_id: app.user.id, device_fp: app.user.id });
+        var res = await client.rpc('increment_vote', { 
+            joke_id: id, 
+            field_name: field, 
+            visitor_id: app.user.id, 
+            device_fp: app.user.id 
+        });
         if (!res.error) { 
             app.user.voted.push(id);
             localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user)); 
@@ -99,46 +116,72 @@ async function vote(id, type) {
 }
 
 async function postJoke() {
-    var txt = document.getElementById('secret-input').value.trim();
+    var textInput = document.getElementById('secret-input');
+    var txt = textInput ? textInput.value.trim() : "";
     var alias = document.getElementById('user-alias').value.trim() || "Anónimo";
-    if (txt.length < 3) return alert('Escribe algo más...');
+
+    if (txt.length < 3) return alert('¡Escribe un chiste más largo!');
+
+    var btn = document.getElementById('post-btn');
+    if(btn) btn.disabled = true;
 
     try {
         var dot = document.querySelector('.dot.active');
         var col = dot ? dot.getAttribute('data-color') : '#fff9c4';
-        var payload = { text: txt, author: alias, authorid: app.user.id, color: col, avatar: app.user.avatar || 'bot1' };
+        var payload = { 
+            text: txt, 
+            author: alias, 
+            authorid: app.user.id, 
+            color: col, 
+            avatar: app.user.avatar || 'bot1' 
+        };
         
         var res = await client.from('jokes').insert([payload]);
         if (res.error) {
             alert("Error: " + res.error.message);
         } else {
-            document.getElementById('secret-input').value = '';
+            if(textInput) textInput.value = '';
             alert("¡Chiste Pegado!");
             initGlobalSync();
         }
-    } catch(e) { alert("Error de red"); }
+    } catch(e) { alert("Error de red al publicar"); }
+    if(btn) btn.disabled = false;
 }
 
 function updateStats() {
-    console.log("-> Actualizando Dashboard...");
     var list = app.state.jokes || [];
     
-    // HALL OF FAME
+    // 1. HALL OF FAME
     var best = list.slice().sort(function(a,b){ return (b.votes_best||0)-(a.votes_best||0); }).slice(0, 5);
     var hl = document.getElementById('humorists-list');
     if (hl) {
         hl.innerHTML = best.map(function(j) {
-            return '<li><span>' + sanitize(j.author) + '</span> <span style="color:#ff9500;margin-left:auto;">🤣 ' + (j.votes_best||0) + '</span></li>';
+            var img = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (j.avatar || 'bot1');
+            return '<li><img src="'+img+'" style="width:20px;height:20px;border-radius:50%;margin-right:10px;"> <span>' + sanitize(j.author) + '</span> <span style="color:#ff9500;margin-left:auto;">🤣 ' + (j.votes_best||0) + '</span></li>';
         }).join('');
     }
 
-    // LA PURGA
-    var worst = list.filter(function(j){ return (j.votes_bad||0)>(j.votes_best||0); }).slice(0, 3);
+    // 2. LA PURGA
+    var worst = list.filter(function(j){ return (j.votes_bad||0)>(j.votes_best||0); }).sort(function(a,b){ return (b.votes_bad-b.votes_best)-(a.votes_bad-a.votes_best); }).slice(0, 3);
     var pl = document.getElementById('purgatory-list');
     if (pl) {
         pl.innerHTML = worst.map(function(j) {
-            return '<li><span>' + sanitize(j.author) + '</span> <span style="color:#ff1744;margin-left:auto;">🍅 ' + (j.votes_bad||0) + '</span></li>';
-        }).join('') || '<li>Todo limpio</li>';
+            var img = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (j.avatar || 'bot1');
+            return '<li><img src="'+img+'" style="width:20px;height:20px;border-radius:50%;margin-right:10px;"> <span>' + sanitize(j.author) + '</span> <span style="color:#ff1744;margin-left:auto;">🍅 ' + (j.votes_bad||0) + '</span></li>';
+        }).join('') || '<li>Todo limpio por ahora</li>';
+    }
+
+    // 3. CUENTA ATRÁS PURGA
+    var now = new Date();
+    var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    var daysLeft = lastDay - now.getDate();
+    var ps = document.getElementById('purgatory-status');
+    if (ps) {
+        if (daysLeft <= 3) {
+            ps.innerHTML = "<p style='color:#ff1744; font-weight:900;'>⚠️ EL JUICIO HA COMENZADO.</p>";
+        } else {
+            ps.innerHTML = "<p style='color:#888;'>Faltan " + (daysLeft - 3) + " días para la purga.</p>";
+        }
     }
 }
 
@@ -149,11 +192,14 @@ function sanitize(s) {
 }
 
 window.onload = function() {
-    console.log("-> V23.0 Cargada");
+    console.log("V24.0 ACTIVE");
     app.user = loadUser();
+    initSounds();
     
-    // Inicializar UI
+    // Inicializar Avatar en Footer
     document.getElementById('my-avatar-img').src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (app.user.avatar || 'bot1');
+
+    // Eventos
     document.getElementById('post-btn').onclick = postJoke;
     
     document.getElementById('avatar-btn').onclick = function() {
@@ -180,7 +226,6 @@ window.onload = function() {
         };
     }
 
-    // Filtros
     var filters = document.querySelectorAll('.filter-btn');
     for (var f=0; f<filters.length; f++) {
         filters[f].onclick = function() {
@@ -191,7 +236,6 @@ window.onload = function() {
         };
     }
 
-    // Dashboard Toggle
     document.getElementById('mobile-dash-toggle').onclick = function() {
         var d = document.getElementById('dashboard');
         var isH = d.getAttribute('aria-hidden') === 'true';
