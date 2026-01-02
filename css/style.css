@@ -84,6 +84,21 @@ body {
     #dashboard { width: 100%; }
 }
 
-.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #000; color: #fff; padding: 10px 25px; border-radius: 50px; z-index: 6000; font-weight: bold; }
+.toast { 
+    position: fixed; 
+    top: 20px; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    background: #000; 
+    color: #fff; 
+    padding: 10px 25px; 
+    border-radius: 50px; 
+    z-index: 6000; 
+    font-weight: bold;
+    opacity: 0; 
+    transition: opacity 0.3s ease; 
+    pointer-events: none;
+}
+.toast.show { opacity: 1; }
 .skeleton { background: #eee; height: 100px; border-radius: 10px; animation: pulse 1.5s infinite; }
 @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
