@@ -169,6 +169,7 @@ function syncWall() {
 function createCard(joke) {
     var el = document.createElement('article');
     el.className = 'post-it';
+    el.id = 'joke-' + joke.id; // Añadimos ID para la captura
     el.style.setProperty('--bg-c', joke.color || '#fff9c4');
     
     var authorImg = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (joke.avatar || 'bot1');
@@ -182,12 +183,36 @@ function createCard(joke) {
                 sanitize(joke.author) +
             '</div>' +
             '<div class="actions">' +
+                '<button class="act-btn" onclick="shareAsImage(\"' + joke.id + '\")" title="Descargar imagen">📸</button>' +
                 '<button class="act-btn ' + vClass + '" onclick="window.vote(\"' + joke.id + '\", \'best\')">🤣 ' + (joke.votes_best||0) + '</button>' +
                 '<button class="act-btn ' + vClass + '" onclick="window.vote(\"' + joke.id + '\", \'bad\')">🍅 ' + (joke.votes_bad||0) + '</button>' +
             '</div>' +
         '</div>';
     return el;
 }
+
+window.shareAsImage = function(id) {
+    var card = document.getElementById('joke-' + id);
+    if (!card) return;
+
+    showToast("Generando imagen...");
+    
+    html2canvas(card, {
+        backgroundColor: null,
+        scale: 2, // Alta calidad
+        logging: false,
+        useCORS: true // Para cargar los avatares externos
+    }).then(function(canvas) {
+        var link = document.createElement('a');
+        link.download = 'chiste-malo.png';
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+        showToast("¡Imagen descargada!");
+    }).catch(function(e) {
+        console.error(e);
+        showToast("Error al crear imagen", "error");
+    });
+};
 
 window.vote = async function(id, type) {
     if (app.user.voted.indexOf(id) !== -1) return showToast('Ya has votado', 'error');
