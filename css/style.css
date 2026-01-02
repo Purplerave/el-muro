@@ -44,20 +44,40 @@ body { margin: 0; background: var(--bg-office); color: var(--text-dark); font-fa
 }
 
 /* --- FOOTER AVATAR FIX --- */
-.avatar-slot { 
-    width: 40px !important; 
-    height: 40px !important; 
-    border-radius: 50% !important; 
-    border: 2px solid #000 !important; 
-    background: #eee; 
-    overflow: hidden; 
+.user-badge { 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
     flex-shrink: 0;
 }
-.avatar-slot img { 
-    width: 100% !important; 
-    height: 100% !important; 
+
+.avatar-slot { 
+    width: 38px !important; 
+    height: 38px !important; 
+    border-radius: 50% !important; 
+    border: 2px solid #000 !important; 
+    background: #fff; 
+    overflow: hidden; 
     display: block !important;
-    object-fit: cover;
+}
+
+#user-alias { 
+    width: 80px !important; 
+    border: none; 
+    background: transparent;
+    font-weight: 900;
+    font-size: 0.85rem;
+    outline: none;
+    padding: 0;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.color-picker { 
+    display: flex; 
+    gap: 5px; 
+    flex-shrink: 0;
+    align-items: center;
 }
 
 .dash-section { margin-bottom: 30px; }
