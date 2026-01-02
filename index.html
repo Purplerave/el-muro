@@ -58,16 +58,21 @@
         <aside id="dashboard" aria-hidden="true">
             <button id="close-dash-btn" class="icon-btn mobile-only" style="position:absolute; top:15px; right:15px; z-index:1001; background:rgba(255,255,255,0.1); border-radius:50%;">✕</button>
             <div class="dashboard-content">
-                <div class="dash-section danger-zone">
-                    <h3>💀 LA PURGA</h3>
-                    <p style="font-size: 0.8rem; color: #888; margin-bottom: 10px;">Los 3 peores chistes del mes irán a juicio los últimos 3 días. Solo la audiencia podrá salvar a uno. Los demás serán eliminados para siempre.</p>
-                    <div id="purgatory-status"></div>
-                    <ul id="purgatory-list" class="rank-list"></ul>
+                <!-- EXPLICACIÓN FIJA DE LA PURGA -->
+                <div class="dash-section danger-zone" style="border-bottom: 2px solid #eee; padding-bottom: 20px;">
+                    <h3>💀 EL JUICIO FINAL</h3>
+                    <p style="font-size: 0.85rem; color: #555; line-height: 1.4;">Los 3 peores chistes del mes irán a juicio los últimos 3 días. Solo la audiencia podrá salvar a uno. Los demás serán eliminados para siempre.</p>
+                    <div id="purgatory-status" style="margin-top: 10px; font-weight: 900;"></div>
                 </div>
 
                 <div class="dash-section">
                     <h3>🏆 HALL OF FAME</h3>
                     <ul id="humorists-list" class="rank-list"></ul>
+                </div>
+
+                <div class="dash-section">
+                    <h3>🥀 SENTENCIADOS</h3>
+                    <ul id="purgatory-list" class="rank-list"></ul>
                 </div>
             </div>
         </aside>
