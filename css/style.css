@@ -141,6 +141,32 @@ body {
 }
 
 .input-linear-container { display: flex; align-items: center; gap: 15px; }
+
+/* FIX AVATAR FOOTER */
+.user-badge { display: flex; align-items: center; gap: 10px; }
+.avatar-slot { 
+    width: 40px; 
+    height: 40px; 
+    border-radius: 50%; 
+    border: 2px solid #000; 
+    background: #fff; 
+    overflow: hidden; 
+    flex-shrink: 0;
+}
+.avatar-slot img { 
+    width: 100% !important; 
+    height: 100% !important; 
+    display: block !important; 
+}
+#user-alias { 
+    background: transparent; 
+    border: none; 
+    font-weight: 900; 
+    width: 100px; 
+    outline: none; 
+    font-size: 1rem;
+}
+
 .input-main { flex: 1; }
 #secret-input { 
     width: 100%; 

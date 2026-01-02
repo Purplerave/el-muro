@@ -76,7 +76,8 @@ function cacheDOM() {
         charCounter: document.getElementById('char-counter'),
         closeDash: document.getElementById('close-dash-btn'),
         error: document.getElementById('error-display'),
-        purgStatus: document.getElementById('purgatory-status')
+        purgStatus: document.getElementById('purgatory-status'),
+        avatarImg: document.getElementById('my-avatar-img')
     };
 }
 
@@ -311,6 +312,10 @@ window.onload = function() {
             app.dom.dashboard.setAttribute('aria-hidden', 'true');
             app.dom.dashToggle.innerText = '🏆';
         };
+    }
+
+    if(app.dom.avatarImg) {
+        app.dom.avatarImg.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + app.user.id;
     }
 
     initGlobalSync();
