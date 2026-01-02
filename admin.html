@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SISTEMA DE CONTROL | EL MURO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --danger: #ff1744; --bg: #0a0a0a; --accent: #FFEB3B; }
+        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        
+        #login-overlay { position: fixed; inset: 0; background: #000; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+        #login-overlay input { background: #222; border: 2px solid #444; color: #fff; padding: 15px; font-size: 1.2rem; border-radius: 8px; text-align: center; }
+        #login-overlay button { background: var(--accent); color: #000; border: none; padding: 15px 40px; font-family: 'Bangers'; font-size: 1.5rem; cursor: pointer; border-radius: 8px; }
+
+        header { width: 100%; padding: 40px 0; border-bottom: 2px solid #222; text-align: center; }
+        h1 { font-family: 'Bangers'; font-size: 4rem; color: var(--accent); margin: 0; letter-spacing: 2px; }
+        
+        .container { width: 90%; max-width: 1000px; margin-top: 40px; padding-bottom: 100px; }
+        .danger-bar { background: #1a0000; border: 2px dashed var(--danger); padding: 20px; border-radius: 12px; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: center; }
+        .danger-bar h2 { margin: 0; color: var(--danger); font-family: 'Bangers'; }
+
+        .btn { padding: 10px 20px; border-radius: 6px; font-weight: 900; cursor: pointer; border: 2px solid #000; transition: 0.2s; }
+        .btn-red { background: var(--danger); color: #fff; }
+        .btn-red:hover { transform: scale(1.05); filter: brightness(1.2); }
+
+        .joke-list { display: flex; flex-direction: column; gap: 10px; }
+        .joke-item { background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+        .joke-text { flex: 1; margin-right: 20px; font-size: 0.9rem; color: #ccc; }
+        .joke-meta { font-size: 0.7rem; color: #666; margin-top: 5px; }
+
+        .toast { position: fixed; top: 20px; background: var(--accent); color: #000; padding: 15px 30px; border-radius: 5px; font-weight: 900; display: none; }
+    </style>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <h1 style="font-size: 2.5rem;">ACCESO RESTRINGIDO</h1>
+        <input type="password" id="pass-input" placeholder="CONTRASEÑA MAESTRA">
+        <button onclick="checkAccess()">ENTRAR AL NÚCLEO</button>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <header>
+        <h1>CONTROL DE EL MURO</h1>
+        <p style="color: #666;">Service Role Mode: GOD ENABLED</p>
+    </header>
+
+    <div class="container">
+        <div class="danger-bar">
+            <div>
+                <h2>💀 PURGA TOTAL</h2>
+                <p style="color: #888; margin: 0;">Borra absolutamente todos los chistes de la base de datos.</p>
+            </div>
+            <button class="btn btn-red" onclick="nukeAll()">EJECUTAR LIMPIEZA TOTAL</button>
+        </div>
+
+        <div class="joke-list" id="joke-list">
+            <!-- Cargando... -->
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const MASTER_PASS = "Castrodepaz@22";
+        const S_URL = "https://vqdzidtiyqsuxnlaztmf.supabase.co";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZHppZHRpeXFzdXhubGF6dG1mIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NzI4MjE1MiwiZXhwIjoyMDgyODU4MTUyfQ.l-GL9XN7tKTLErNQjAcFf2NRLsijuDJ3TnVIhcW0Lrc";
+        
+        let client;
+
+        function showToast(m) {
+            const t = document.getElementById('toast');
+            t.innerText = m; t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 3000);
+        }
+
+        function checkAccess() {
+            const val = document.getElementById('pass-input').value;
+            if (val === MASTER_PASS) {
+                document.getElementById('login-overlay').style.display = 'none';
+                initAdmin();
+            } else {
+                alert("CONTRASEÑA INCORRECTA. ACCESO DENEGADO.");
+            }
+        }
+
+        async function initAdmin() {
+            client = supabase.createClient(S_URL, S_KEY);
+            loadJokes();
+        }
+
+        async function loadJokes() {
+            const { data, error } = await client.from('jokes').select('*').order('ts', { ascending: false });
+            if (error) return alert("Error cargando chistes");
+            
+            const list = document.getElementById('joke-list');
+            list.innerHTML = "";
+            data.forEach(j => {
+                const item = document.createElement('div');
+                item.className = 'joke-item';
+                item.innerHTML = `
+                    <div class="joke-text">
+                        <div>${j.text}</div>
+                        <div class="joke-meta">Por: ${j.author} | ID: ${j.id} | Fecha: ${j.ts}</div>
+                    </div>
+                    <button class="btn btn-red" onclick="deleteJoke('${j.id}')">BORRAR</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        async function deleteJoke(id) {
+            if (!confirm("¿Seguro que quieres borrar este chiste?")) return;
+            const { error } = await client.from('jokes').delete().eq('id', id);
+            if (!error) {
+                showToast("Chiste eliminado.");
+                loadJokes();
+            } else {
+                alert("Error al borrar: " + error.message);
+            }
+        }
+
+        async function nukeAll() {
+            if (!confirm("⚠️ ATENCIÓN: Vas a borrar TODOS los chistes del muro. ¿Deseas proceder?")) return;
+            if (!confirm("⚠️ ÚLTIMA OPORTUNIDAD: No hay marcha atrás. ¿ESTÁS SEGURO?")) return;
+            
+            const { error } = await client.from('jokes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            if (!error) {
+                showToast("LA MURALLA HA SIDO DERRIBADA.");
+                loadJokes();
+            } else {
+                alert("Error en la purga: " + error.message);
+            }
+        }
+
+        // Permitir entrar con Enter
+        document.getElementById('pass-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkAccess();
+        });
+    </script>
+</body>
+</html>
