@@ -156,7 +156,6 @@ window.onload = function() {
     document.getElementById('my-avatar-img').src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (app.user.avatar || 'bot1');
     if(app.user.alias) document.getElementById('user-alias').value = app.user.alias;
 
-    // EVENT DELEGATION PARA EL MURO (SOLUCIÓN DEFINITIVA A COMILLAS)
     document.getElementById('mural').onclick = function(e) {
         var btn = e.target.closest('.act-btn');
         if (!btn) return;
@@ -178,12 +177,7 @@ window.onload = function() {
 
     document.getElementById('search-input').oninput = function(e) { app.state.filterTerm = e.target.value; syncWall(); };
     document.getElementById('mute-btn').onclick = function() { app.isMuted = !app.isMuted; this.innerText = app.isMuted ? '🔇' : '🔊'; };
-    document.getElementById('mobile-dash-toggle').onclick = function() {
-        var d = document.getElementById('dashboard');
-        var isH = d.getAttribute('aria-hidden') === 'true';
-        d.setAttribute('aria-hidden', isH ? 'false' : 'true');
-        this.innerText = isH ? '✕' : '🏆';
-    };
+    
     document.getElementById('avatar-btn').onclick = function() {
         var s = document.getElementById('avatar-selector');
         s.style.display = (s.style.display === 'block' ? 'none' : 'block');
@@ -215,8 +209,15 @@ window.onload = function() {
             this.classList.add('active');
             app.state.sort = this.dataset.sort;
             syncWall();
+            if (this.classList.contains('btn-trigger-dash')) {
+                document.getElementById('dashboard').setAttribute('aria-hidden', 'false');
+            }
         };
     }
+
+    document.getElementById('close-dash-btn').onclick = function() {
+        document.getElementById('dashboard').setAttribute('aria-hidden', 'true');
+    };
 
     initGlobalSync();
 };
