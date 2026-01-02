@@ -1,5 +1,5 @@
 /**
- * EL MURO V16.7 - REPARACIÓN FINAL DE EVENTOS
+ * EL MURO V18.0 - RESILIENCIA TOTAL (FIX BRAVE & LOOPS)
  */
 
 var SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -9,7 +9,7 @@ var CONFIG = {
     USER_KEY: 'elMuro_v6_usr',
     STORAGE_KEY: 'elMuro_v6_db',
     AI_NAME: '00000000-0000-0000-0000-000000000000',
-    COOLDOWN_MS: 30000
+    COOLDOWN_MS: 20000 // Reducido a 20s para mejor UX
 };
 
 var client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -36,17 +36,15 @@ window.app = {
         laugh: new Audio('https://assets.mixkit.co/active_storage/sfx/2802/2802-preview.mp3'),
         splat: new Audio('https://assets.mixkit.co/active_storage/sfx/2747/2747-preview.mp3'),
         click: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3')
-    },
-    dom: {}
+    }
 };
 
 function playSfx(name) {
     if (app.isMuted) return;
-    var s = app.sounds[name];
-    if (s) {
-        s.currentTime = 0;
-        s.play().catch(function(e) {});
-    }
+    try {
+        var s = app.sounds[name];
+        if (s) { s.currentTime = 0; s.play().catch(function(e) {}); }
+    } catch(e) {}
 }
 
 function loadUser() {
@@ -59,28 +57,8 @@ function loadUser() {
     return u;
 }
 
-function cacheDOM() {
-    app.dom = {
-        mural: document.getElementById('mural'),
-        input: document.getElementById('secret-input'),
-        alias: document.getElementById('user-alias'),
-        filters: document.querySelectorAll('.filter-btn'),
-        purgList: document.getElementById('purgatory-list'),
-        humorList: document.getElementById('humorists-list'),
-        muteBtn: document.getElementById('mute-btn'),
-        dashToggle: document.getElementById('mobile-dash-toggle'),
-        dashboard: document.getElementById('dashboard'),
-        postBtn: document.getElementById('post-btn'),
-        searchInput: document.getElementById('search-input'),
-        closeDash: document.getElementById('close-dash-btn'),
-        error: document.getElementById('error-display'),
-        purgStatus: document.getElementById('purgatory-status'),
-        avatarImg: document.getElementById('my-avatar-img')
-    };
-}
-
 async function initGlobalSync() {
-    console.log("Syncing...");
+    console.log("Iniciando Sync...");
     try {
         var res = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(200);
         if (res.data) {
@@ -89,18 +67,6 @@ async function initGlobalSync() {
             syncWall();
         }
     } catch (e) { console.error("Sync Error:", e); }
-
-    client.channel('public:jokes').on('postgres_changes', { event: '*', schema: 'public', table: 'jokes' }, function(payload) {
-        if (payload.eventType === 'INSERT') {
-            showToast('¡Nuevo chiste!');
-        } else if (payload.eventType === 'UPDATE') {
-            var idx = app.state.jokes.findIndex(function(j) { return j.id === payload.new.id; });
-            if (idx !== -1) {
-                app.state.jokes[idx] = payload.new;
-                updateCardUI(payload.new);
-            }
-        }
-    }).subscribe();
 }
 
 function freezeOrder() {
@@ -110,18 +76,9 @@ function freezeOrder() {
     } else if (app.state.sort === 'controversial') {
         app.displayOrder = list.filter(function(j) {
             return (j.votes_bad || 0) > (j.votes_best || 0);
-        }).sort(function(a,b) { return (b.votes_bad - b.votes_best) - (a.votes_bad - a.votes_best); }).slice(0, 3);
+        }).sort(function(a,b) { return (b.votes_bad - b.votes_best) - (a.votes_bad - a.votes_best); }).slice(0, 5);
     } else {
         app.displayOrder = list.sort(function(a,b) { return new Date(b.ts) - new Date(a.ts); });
-    }
-}
-
-function updateCardUI(joke) {
-    var card = document.getElementById('joke-' + joke.id);
-    if (card) {
-        var spans = card.querySelectorAll('.actions span');
-        if(spans[0]) spans[0].innerText = joke.votes_best || 0;
-        if(spans[1]) spans[1].innerText = joke.votes_bad || 0;
     }
 }
 
@@ -146,34 +103,22 @@ function createCard(joke) {
     el.id = 'joke-' + joke.id;
     el.style.setProperty('--bg-c', joke.color || '#fff9c4');
     
-    var isVoted = app.user.voted.indexOf(joke.id) !== -1;
+    var isVoted = (app.user.voted || []).indexOf(joke.id) !== -1;
     var vClass = isVoted ? 'voted' : '';
     var authorImg = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (joke.authorid || joke.author);
 
-    el.innerHTML = '<div class="post-body">' + sanitize(joke.text) + '</div>' +
-        '<div class="post-footer">' +
-            '<div class="author-info">' +
-                '<img src="' + authorImg + '">' +
-                '<span>' + sanitize(joke.author) + '</span>' +
-            '</div>' +
-            '<div class="actions">' +
-                '<button class="act-btn vote-btn ' + vClass + '" data-id="' + joke.id + '" data-type="best">🤣 <span>' + (joke.votes_best || 0) + '</span></button>' +
-                '<button class="act-btn vote-btn ' + vClass + '" data-id="' + joke.id + '" data-type="bad">🍅 <span>' + (joke.votes_bad || 0) + '</span></button>' +
-            '</div>' +
+    el.innerHTML = '<div class="post-body">' + sanitize(joke.text) + '</div>' + 
+        '<div class="post-footer">' + 
+            '<div class="author-info">' + 
+                '<img src="' + authorImg + '" style="width:24px;height:24px;border-radius:50%;">' + 
+                '<span>' + sanitize(joke.author) + '</span>' + 
+            '</div>' + 
+            '<div class="actions">' + 
+                '<button class="act-btn vote-btn ' + vClass + '" data-id="' + joke.id + '" data-type="best">🤣 <span>' + (joke.votes_best || 0) + '</span></button>' + 
+                '<button class="act-btn vote-btn ' + vClass + '" data-id="' + joke.id + '" data-type="bad">🍅 <span>' + (joke.votes_bad || 0) + '</span></button>' + 
+            '</div>' + 
         '</div>';
     return el;
-}
-
-function initDelegation() {
-    var mural = document.getElementById('mural');
-    if(mural) {
-        mural.addEventListener('click', function(e) {
-            var btn = e.target.closest('.act-btn');
-            if (!btn) return;
-            var id = btn.dataset.id;
-            if (btn.classList.contains('vote-btn')) vote(id, btn.dataset.type);
-        });
-    }
 }
 
 async function vote(id, type) {
@@ -191,38 +136,51 @@ async function vote(id, type) {
         if (!res.error) { 
             app.user.voted.push(id);
             localStorage.setItem(CONFIG.USER_KEY, JSON.stringify(app.user)); 
+            initGlobalSync(); // Refresco instantáneo
         }
     } catch(e) {}
 }
 
 async function postJoke() {
+    console.log("Intentando pegar chiste...");
     var lastPostTime = localStorage.getItem('last_post_time') || 0;
-    if (Date.now() - lastPostTime < CONFIG.COOLDOWN_MS) return showToast('Espera 30s');
+    if (Date.now() - lastPostTime < CONFIG.COOLDOWN_MS) return showToast('Espera un poco...');
 
     var textInput = document.getElementById('secret-input');
     var aliasInput = document.getElementById('user-alias');
     var text = textInput ? textInput.value.trim() : "";
     var alias = aliasInput ? aliasInput.value.trim() : "Anónimo";
 
-    if (text.length < 3) return showToast('Escribe algo...');
+    if (text.length < 3) return showToast('Escribe algo más...');
     
     var btn = document.getElementById('post-btn');
     if(btn) btn.disabled = true;
 
     try {
-        var dot = document.querySelector('.dot.active');
-        var color = dot ? dot.dataset.color : '#fff9c4';
-        var res = await client.from('jokes').insert([{ text: text, author: alias, authorid: app.user.id, color: color, votes_best: 0, votes_bad: 0 }]).select();
+        var activeDot = document.querySelector('.dot.active');
+        var color = activeDot ? activeDot.getAttribute('data-color') : '#fff9c4';
+        
+        var res = await client.from('jokes').insert([{ 
+            text: text, 
+            author: alias, 
+            authorid: app.user.id, 
+            color: color, 
+            votes_best: 0, 
+            votes_bad: 0 
+        }]).select();
         
         if (!res.error) { 
+            console.log("Chiste pegado con éxito");
             playSfx('post');
             if(textInput) textInput.value = ''; 
             localStorage.setItem('last_post_time', Date.now());
             showToast('¡Pegado!'); 
-            // FORZAR RECARGA DE DATOS PARA VER EL CHISTE AL INSTANTE
             initGlobalSync(); 
+        } else { 
+            console.error("Error insert:", res.error);
+            showToast('Error al guardar');
         }
-    } catch(e) { showToast('Error red'); }
+    } catch(e) { console.error("Error red:", e); showToast('Error de red'); }
     if(btn) btn.disabled = false;
 }
 
@@ -234,29 +192,27 @@ function showToast(m) {
 
 function sanitize(s) { 
     if(!s) return "";
-    return s.replace(/[<>"']/g, '').substring(0, 300); 
+    return s.replace(/[<>\"']/g, '').substring(0, 300); 
 }
 
 window.onload = function() {
-    console.log("V16.7 ACTIVE");
+    console.log("V18.0 START");
     app.user = loadUser();
-    cacheDOM();
-    initDelegation();
     
-    // Asignación DIRECTA de eventos para evitar fallos de caché
+    // 1. VINCULAR EVENTOS CRÍTICOS PRIMERO
     var postBtn = document.getElementById('post-btn');
     if(postBtn) postBtn.onclick = postJoke;
 
     var dots = document.querySelectorAll('.dot');
     for (var i=0; i<dots.length; i++) {
-        dots[i].onclick = function(e) {
-            var allDots = document.querySelectorAll('.dot');
-            for (var j=0; j<allDots.length; j++) allDots[j].classList.remove('active');
+        dots[i].onclick = function() {
+            var all = document.querySelectorAll('.dot');
+            for (var j=0; j<all.length; j++) all[j].classList.remove('active');
             this.classList.add('active');
         };
     }
 
-    // Buscador
+    // 2. BUSCADOR (CORREGIDO BUCLE INFINITO)
     var sInput = document.getElementById('search-input');
     if(sInput) {
         var debouncedSearch = debounce(function(val) {
@@ -270,7 +226,7 @@ window.onload = function() {
         sInput.oninput = function(e) { debouncedSearch(e.target.value); };
     }
 
-    // Dash
+    // 3. DASHBOARD
     var dToggle = document.getElementById('mobile-dash-toggle');
     if(dToggle) dToggle.onclick = function() {
         var dash = document.getElementById('dashboard');
@@ -279,13 +235,29 @@ window.onload = function() {
         this.innerText = isH ? '✕' : '🏆';
     };
 
-    if(app.dom.avatarImg) {
-        setTimeout(function() {
-            app.dom.avatarImg.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + app.user.id;
-        }, 100);
-    }
+    // 4. AVATAR & FINGERPRINT (OPCIONAL)
+    var av = document.getElementById('my-avatar-img');
+    if(av) av.src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + app.user.id;
 
+    try {
+        if (typeof FingerprintJS !== 'undefined') {
+            FingerprintJS.load().then(function(fp) { return fp.get(); }).then(function(result) {
+                app.fingerprint = result.visitorId;
+            }).catch(function(){});
+        }
+    } catch(e) {}
+
+    // 5. CARGAR DATOS
     initGlobalSync();
+    
+    // Delegación para votos
+    var mural = document.getElementById('mural');
+    if(mural) {
+        mural.addEventListener('click', function(e) {
+            var btn = e.target.closest('.vote-btn');
+            if (btn) vote(btn.dataset.id, btn.dataset.type);
+        });
+    }
 };
 
 function updateStats() {
