@@ -77,29 +77,25 @@
     <footer id="input-bar">
         <div id="error-display" style="display:none; background: #ff1744; color: white; text-align: center; padding: 5px; font-size: 0.8rem; font-weight: bold;">Error de conexión. Reintenta.</div>
         <div class="input-linear-container">
-            <div class="row-1-mobile">
-                <div class="user-badge" id="my-badge">
-                    <div class="avatar-slot">
-                        <img id="my-avatar-img" src="" alt="Avatar">
-                    </div>
-                    <input type="text" id="user-alias" placeholder="TU ALIAS" maxlength="12">
+            <div class="user-badge" id="my-badge">
+                <div class="avatar-slot">
+                    <img id="my-avatar-img" src="" alt="Avatar">
                 </div>
-
-                <div class="color-picker">
-                    <button class="dot active" style="--c:#fff9c4" data-color="#fff9c4"></button>
-                    <button class="dot" style="--c:#ffccbc" data-color="#ffccbc"></button>
-                    <button class="dot" style="--c:#c8e6c9" data-color="#c8e6c9"></button>
-                    <button class="dot" style="--c:#b3e5fc" data-color="#b3e5fc"></button>
-                </div>
+                <input type="text" id="user-alias" placeholder="ALIAS" maxlength="12">
             </div>
 
-            <div class="row-2-mobile">
-                <div class="input-main">
-                    <input type="text" id="secret-input" placeholder="¡Suelta tu peor chiste...!" maxlength="300">
-                    <span id="char-counter">0/300</span>
-                </div>
-                <button id="post-btn" class="send-btn">PEGAR</button>
+            <div class="color-picker">
+                <button class="dot active" style="--c:#fff9c4" data-color="#fff9c4"></button>
+                <button class="dot" style="--c:#ffccbc" data-color="#ffccbc"></button>
+                <button class="dot" style="--c:#c8e6c9" data-color="#c8e6c9"></button>
+                <button class="dot" style="--c:#b3e5fc" data-color="#b3e5fc"></button>
             </div>
+
+            <div class="input-main">
+                <input type="text" id="secret-input" placeholder="¡Pega tu chiste aquí...!" maxlength="300">
+            </div>
+            
+            <button id="post-btn" class="send-btn">PEGAR</button>
         </div>
     </footer>
 
