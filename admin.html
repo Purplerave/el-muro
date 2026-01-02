@@ -103,8 +103,9 @@
         async function triggerGroq() {
             showToast("Groq está pensando...");
             try {
-                // Obtener últimos 20 chistes para una memoria más fuerte
-                const { data: recent } = await client.from('jokes').select('text').order('ts', {ascending:false}).limit(20);
+                // Solo 5 chistes de memoria para ahorrar tokens. 
+                // El Escudo de Originalidad se encarga del resto.
+                const { data: recent } = await client.from('jokes').select('text').order('ts', {ascending:false}).limit(5);
                 const memory = recent.map(r => r.text).join(" | ");
 
                 const { data, error } = await client.functions.invoke('generate-joke', { 
