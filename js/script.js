@@ -95,7 +95,15 @@ async function postJoke() {
     try {
         var dot = document.querySelector('.dot.active');
         var col = dot ? dot.getAttribute('data-color') : '#fff9c4';
-        var payload = { text: txt, author: alias, authorid: app.user.id, color: col, avatar: app.user.avatar };
+        
+        // Payload con fallback de seguridad
+        var payload = { 
+            text: txt, 
+            author: alias, 
+            authorid: app.user.id, 
+            color: col,
+            avatar: app.user.avatar || 'bot1'
+        };
         
         var res = await client.from('jokes').insert([payload]);
         if (res.error) {
