@@ -142,11 +142,28 @@ window.onload = function() {
         s.style.display = (s.style.display === 'block' ? 'none' : 'block');
     };
 
+    // Botón Mute
+    var mb = document.getElementById('mute-btn');
+    if(mb) mb.onclick = function() {
+        app.isMuted = !app.isMuted;
+        this.innerText = app.isMuted ? '🔇' : '🔊';
+    };
+
+    // Toggle Dashboard (Trofeo)
+    var dt = document.getElementById('mobile-dash-toggle');
+    if(dt) dt.onclick = function() {
+        var d = document.getElementById('dashboard');
+        var isHidden = d.getAttribute('aria-hidden') === 'true';
+        d.setAttribute('aria-hidden', isHidden ? 'false' : 'true');
+        this.innerText = isHidden ? '✕' : '🏆';
+    };
+
     // Botón Cerrar Dashboard
     var cb = document.getElementById('close-dash-btn');
     if(cb) cb.onclick = function() {
-        if(dash) dash.setAttribute('aria-hidden', 'true');
-        if(dToggle) dToggle.innerText = '🏆';
+        document.getElementById('dashboard').setAttribute('aria-hidden', 'true');
+        var toggle = document.getElementById('mobile-dash-toggle');
+        if(toggle) toggle.innerText = '🏆';
     };
 
     var opts = document.querySelectorAll('.av-opt');
