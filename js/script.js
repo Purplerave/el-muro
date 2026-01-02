@@ -320,6 +320,18 @@ window.onload = function() {
         }, 100);
     }
 
+    // RESTAURAR SELECTOR DE COLORES
+    var dots = document.querySelectorAll('.dot');
+    for (var i=0; i<dots.length; i++) {
+        dots[i].onclick = function(e) {
+            for (var j=0; j<dots.length; j++) dots[j].classList.remove('active');
+            e.target.classList.add('active');
+        };
+    }
+
+    // RESTAURAR BOTÓN PEGAR
+    if(app.dom.postBtn) app.dom.postBtn.onclick = postJoke;
+
     initGlobalSync();
 };
 
