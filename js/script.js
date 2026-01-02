@@ -231,7 +231,7 @@ async function postJoke() {
     app.dom.postBtn.disabled = true;
     try {
         var dot = document.querySelector('.dot.active');
-        var color = dot ? dot.dataset.color : '#FFEB3B';
+        var color = dot ? dot.dataset.color : '#fff9c4'; // Amarillo pastel por defecto
         var res = await client.from('jokes').insert([{ text: text, author: alias, authorid: app.user.id, color: color, votes_best: 0, votes_bad: 0 }]).select();
         
         if (!res.error) { 
