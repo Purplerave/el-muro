@@ -184,19 +184,51 @@ async function postJoke() {
     var aliasInput = document.getElementById('user-alias');
     var alias = aliasInput ? aliasInput.value.trim() : "";
 
-    // VALIDACIÓN ESTRICTA DE ALIAS
-    if (alias.length < 2) return showToast('¡Pon tu ALIAS para publicar!', 'error');
-    if (txt.length < 3) return showToast('Chiste muy corto', 'error');
-    
-    var check = await client.rpc('check_joke_originality', { new_content: txt });
-    if (check.data === false) return showToast('Repetido', 'error');
+    // BLOQUEO ABSOLUTO SIN ALIAS
+    if (!alias || alias.length < 2) {
+        showToast('¡Escribe tu ALIAS (mín. 2 letras) para poder pegar!', 'error');
+        if(aliasInput) aliasInput.focus();
+        return;
+    }
 
-    var dot = document.querySelector('.dot.active');
-    var col = dot ? dot.getAttribute('data-color') : '#fff9c4';
+    if (txt.length < 3) return showToast('¡El chiste es demasiado corto!', 'error');
     
-    client.from('jokes').insert([{ text: txt, author: alias, authorid: app.user.id, color: col, avatar: app.user.avatar || 'bot1' }]).then(function(res) {
-        if (!res.error) { input.value = ''; playSound('post'); showToast('¡Pegado!'); initGlobalSync(); }
-    });
+    // Desactivar botón para evitar doble clic
+    var btn = document.getElementById('post-btn');
+    if(btn) btn.disabled = true;
+
+    try {
+        var check = await client.rpc('check_joke_originality', { new_content: txt });
+        if (check.data === false) {
+            if(btn) btn.disabled = false;
+            return showToast('Ese chiste ya está en el muro...', 'error');
+        }
+
+        var dot = document.querySelector('.dot.active');
+        var col = dot ? dot.getAttribute('data-color') : '#fff9c4';
+        
+        client.from('jokes').insert([{ 
+            text: txt, 
+            author: alias, 
+            authorid: app.user.id, 
+            color: col, 
+            avatar: app.user.avatar || 'bot1' 
+        }]).then(function(res) {
+            if (!res.error) { 
+                input.value = ''; 
+                playSound('post'); 
+                showToast('¡Chiste pegado!'); 
+                // Guardar el alias exitoso
+                app.user.alias = alias;
+                localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user));
+                initGlobalSync(); 
+            }
+            if(btn) btn.disabled = false;
+        });
+    } catch(e) {
+        if(btn) btn.disabled = false;
+        showToast('Error de red', 'error');
+    }
 }
 
 function updateStats() {
