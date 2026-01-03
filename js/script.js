@@ -62,10 +62,12 @@ function showToast(msg, type) {
 
 function sanitize(s) { 
     if(!s) return "";
-    var d = document.createElement('div'); d.textContent = s;
-    return d.innerHTML.substring(0, 300); 
+    var d = document.createElement('div'); 
+    d.textContent = s.substring(0, 300); // Cortamos antes de escapar
+    return d.innerHTML; 
 }
 
+var isGeneratingAI = false; // Bloqueo para evitar múltiples peticiones
 async function initGlobalSync() {
     console.log("-> Sincronizando con el Muro...");
     try {
@@ -80,6 +82,7 @@ async function initGlobalSync() {
 }
 
 async function checkDailyAIJoke() {
+    if (isGeneratingAI) return;
     var aiID = '00000000-0000-0000-0000-000000000000';
     var jokes = app.state.jokes || [];
     var lastAI = jokes.filter(function(j) { return j.authorid === aiID; })[0];
@@ -88,6 +91,7 @@ async function checkDailyAIJoke() {
     var fakeNames = ['Paco_82', 'Cris_Smile', 'El_Cuñao', 'Javi_Comedia', 'Rosa_M', 'Gamer_Chiste', 'Luisito_99', 'Sara_LOL', 'Marcos_R', 'Dany_V', 'Marta_G', 'Toni_Chistes', 'Super_Pepa', 'Nico_B', 'Elena_Sky'];
 
     if (!lastAI || (Date.now() - new Date(lastAI.ts).getTime() >= 21600000)) {
+        isGeneratingAI = true; // Activamos bloqueo
         console.log("-> Solicitando nuevo chiste a Groq (GPT OSS 20B)...");
         try {
             // Obtenemos memoria para no repetir
@@ -108,9 +112,13 @@ async function checkDailyAIJoke() {
                     color: "#fff9c4", 
                     avatar: randomAvatar
                 }]);
+                isGeneratingAI = false; // Liberamos bloqueo tras éxito
                 initGlobalSync();
             }
-        } catch(e) { console.warn("IA de Groq no disponible temporalmente"); }
+        } catch(e) { 
+            isGeneratingAI = false; // Liberamos bloqueo en error
+            console.warn("IA de Groq no disponible temporalmente"); 
+        }
     }
 }
 
