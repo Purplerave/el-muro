@@ -251,9 +251,35 @@ function updateStats() {
     var hl = document.getElementById('humorists-list');
     if (hl) hl.innerHTML = best.map(function(j) { return '<li><span>' + sanitize(j.author) + '</span> <span style="color:#ff9500;margin-left:auto;">🤣 ' + (j.votes_best||0) + '</span></li>'; }).join('');
     var worst = list.filter(function(j){ return (j.votes_bad||0)>(j.votes_best||0); }).sort(function(a,b){ return (b.votes_bad||0)-(a.votes_bad||0); }).slice(0, 3);
+    
+    // Lógica de Fechas para la Purga
+    var now = new Date();
+    var lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(); // Último día del mes (28, 30, 31)
+    var purgeStartDay = lastDay - 2; // Empieza 3 días antes (ej: 29, 30, 31)
+    var currentDay = now.getDate();
+    var isPurgeActive = currentDay >= purgeStartDay;
+    
+    var statusDiv = document.getElementById('purgatory-status');
+    if (statusDiv) {
+        if (isPurgeActive) {
+            // Calcular horas restantes
+            var nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            var hoursLeft = Math.floor((nextMonth - now) / (1000 * 60 * 60));
+            statusDiv.innerHTML = '<div style="background:#ff1744; color:#fff; padding:8px; border-radius:5px; text-align:center; margin-bottom:10px; font-weight:bold; font-size:0.9rem; animation:pulse 1.5s infinite;">🚨 PURGA ACTIVA: Quedan ' + hoursLeft + 'h</div>';
+        } else {
+            var daysLeft = purgeStartDay - currentDay;
+            statusDiv.innerHTML = '<div style="background:#333; color:#fff; padding:8px; border-radius:5px; text-align:center; margin-bottom:10px; font-size:0.9rem;">⏳ Faltan ' + daysLeft + ' días para la Purga</div>';
+        }
+    }
+
     var pl = document.getElementById('purgatory-list');
     if (pl) {
         pl.innerHTML = worst.map(function(j) { 
+            // El botón de indulto solo aparece si la purga está activa
+            var saveBtn = isPurgeActive 
+                ? '<button class="act-btn btn-vote" data-id="' + j.id + '" data-type="save" style="font-size:0.7rem; padding:2px 6px; background:#e3f2fd; border-color:#2196f3; color:#0d47a1;">🛡️ ' + (j.votes_save||0) + '</button>' 
+                : '<span style="font-size:0.7rem; color:#aaa;" title="Indulto disponible a fin de mes">🔒 ' + (j.votes_save||0) + '</span>';
+
             return '<li>' +
                 '<div style="flex:1;">' +
                     '<span>' + sanitize(j.author) + '</span>' +
@@ -261,7 +287,7 @@ function updateStats() {
                 '</div>' +
                 '<div style="display:flex; flex-direction:column; align-items:end; gap:5px;">' +
                     '<span style="color:#ff1744;">🍅 ' + (j.votes_bad||0) + '</span>' +
-                    '<button class="act-btn btn-vote" data-id="' + j.id + '" data-type="save" style="font-size:0.7rem; padding:2px 6px;">🛡️ ' + (j.votes_save||0) + '</button>' +
+                    saveBtn +
                 '</div>' +
             '</li>'; 
         }).join('') || '<li style="color:#aaa; font-weight:normal;">No hay candidatos a la purga... por ahora.</li>';
