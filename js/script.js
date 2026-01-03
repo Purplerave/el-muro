@@ -180,15 +180,29 @@ window.shareAsImage = function(id) {
 };
 
 window.vote = async function(id, type) {
-    if (app.user.voted.indexOf(id) !== -1) return showToast('Ya has votado este chiste', 'error');
-    playSound(type === 'best' ? 'laugh' : 'splat');
+    // Si es voto normal (best/bad), chequeamos si ya votó. Si es 'save', permitimos (o podríamos limitar también).
+    // Asumimos que 'save' es una acción especial que permite votar aunque hayas votado risa/tomate.
+    if (type !== 'save' && app.user.voted.indexOf(id) !== -1) return showToast('Ya has votado este chiste', 'error');
+    
+    var field = 'votes_best';
+    if (type === 'bad') field = 'votes_bad';
+    if (type === 'save') field = 'votes_save';
+
+    playSound(type === 'best' ? 'laugh' : (type === 'save' ? 'post' : 'splat'));
+
     try {
-        var field = (type === 'best' ? 'votes_best' : 'votes_bad');
         var res = await client.rpc('increment_vote', { joke_id: id, field_name: field, visitor_id: app.user.id, device_fp: app.user.id });
         if (!res.error) { 
-            app.user.voted.push(id);
-            localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user)); 
+            if (type !== 'save') {
+                app.user.voted.push(id);
+                localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user)); 
+            } else {
+                showToast("🛡️ ¡Indulto registrado!");
+            }
             initGlobalSync();
+        } else {
+            console.error(res.error);
+            if (type === 'save') showToast("Error: Faltan columnas en DB", 'error');
         }
     } catch(e) {}
 };
@@ -238,7 +252,20 @@ function updateStats() {
     if (hl) hl.innerHTML = best.map(function(j) { return '<li><span>' + sanitize(j.author) + '</span> <span style="color:#ff9500;margin-left:auto;">🤣 ' + (j.votes_best||0) + '</span></li>'; }).join('');
     var worst = list.filter(function(j){ return (j.votes_bad||0)>(j.votes_best||0); }).sort(function(a,b){ return (b.votes_bad||0)-(a.votes_bad||0); }).slice(0, 3);
     var pl = document.getElementById('purgatory-list');
-    if (pl) pl.innerHTML = worst.map(function(j) { return '<li><span>' + sanitize(j.author) + '</span> <span style="color:#ff1744;margin-left:auto;">🍅 ' + (j.votes_bad||0) + '</span></li>'; }).join('') || '<li style="color:#aaa; font-weight:normal;">No hay candidatos a la purga... por ahora.</li>';
+    if (pl) {
+        pl.innerHTML = worst.map(function(j) { 
+            return '<li>' +
+                '<div style="flex:1;">' +
+                    '<span>' + sanitize(j.author) + '</span>' +
+                    '<div style="font-size:0.75rem; color:#666; margin-top:2px;">' + sanitize(j.text).substring(0, 40) + '...</div>' +
+                '</div>' +
+                '<div style="display:flex; flex-direction:column; align-items:end; gap:5px;">' +
+                    '<span style="color:#ff1744;">🍅 ' + (j.votes_bad||0) + '</span>' +
+                    '<button class="act-btn btn-vote" data-id="' + j.id + '" data-type="save" style="font-size:0.7rem; padding:2px 6px;">🛡️ ' + (j.votes_save||0) + '</button>' +
+                '</div>' +
+            '</li>'; 
+        }).join('') || '<li style="color:#aaa; font-weight:normal;">No hay candidatos a la purga... por ahora.</li>';
+    }
 }
 
 window.onload = function() {
