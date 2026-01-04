@@ -1,5 +1,5 @@
 /**
- * EL MURO V37.2 - STABILITY & COLOR FIX
+ * EL MURO V37.3 - CACHE BUSTER & STABILITY
  */
 
 var SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -29,6 +29,7 @@ function showToast(msg, type) {
     var el = document.createElement('div');
     el.className = 'toast show';
     el.style.backgroundColor = (type === 'error' ? '#ff1744' : '#4caf50');
+    el.style.zIndex = "99999";
     el.innerText = msg;
     container.appendChild(el);
     setTimeout(function() { el.remove(); }, 3000);
@@ -44,9 +45,8 @@ function sanitize(s) {
 async function initGlobalSync() {
     try {
         var { data, error } = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(200);
-        if (error) throw error;
         if (data) { app.state.jokes = data; syncWall(); }
-    } catch (e) { console.error("Error cargando chistes:", e); }
+    } catch (e) { console.error(e); }
 }
 
 function syncWall() {
@@ -62,10 +62,13 @@ function createCard(joke) {
     el.className = 'post-it';
     el.id = 'joke-' + joke.id;
     
-    // APLICACIÓN DE COLOR (CORREGIDA)
+    // COLOR VERDE Y DEMÁS: Forzamos variable CSS
     if (joke.color === 'special-ai') el.classList.add('special-ai');
     else if (joke.color === 'special-vip') el.classList.add('special-vip');
-    else el.style.setProperty('--bg-c', joke.color || '#fff9c4');
+    else {
+        el.style.setProperty('--bg-c', joke.color || '#fff9c4');
+        el.style.backgroundColor = joke.color || '#fff9c4'; // Doble seguridad
+    }
     
     var votes = (joke.votes_best || 0);
     var bads = (joke.votes_bad || 0);
@@ -108,7 +111,7 @@ async function postJoke() {
     var alias = aliasInput.value.trim();
 
     if (alias.length < 2) return showToast('¡Pon tu ALIAS!', 'error');
-    if (txt.length < 3) return showToast('Muy corto', 'error');
+    if (txt.length < 3) return showToast('Chiste muy corto', 'error');
     
     var dot = document.querySelector('.dot.active');
     var col = dot ? dot.getAttribute('data-color') : '#fff9c4';
@@ -123,12 +126,12 @@ async function postJoke() {
         
         if (!error) { 
             input.value = ''; 
-            showToast('¡Pegado!', 'success'); 
+            showToast('¡Chiste pegado!', 'success'); 
             initGlobalSync(); 
         } else {
-            showToast("Error: " + error.message, 'error');
+            alert("Error Supabase: " + error.message);
         }
-    } catch(e) { showToast("Fallo de red", 'error'); }
+    } catch(e) { alert("Error de Red: " + e.message); }
     btn.disabled = false;
 }
 
@@ -139,22 +142,14 @@ window.onload = function() {
     
     document.getElementById('post-btn').onclick = postJoke;
     
-    // Delegación para dots
+    // Selector de color
     document.getElementById('color-dots').onclick = function(e) {
-        if(e.target.classList.contains('dot')) {
-            document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
-            e.target.classList.add('active');
+        var dot = e.target.closest('.dot');
+        if(dot) {
+            document.querySelectorAll('.dot').forEach(function(d) { d.classList.remove('active'); });
+            dot.classList.add('active');
         }
     };
-
-    // Filtros
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.onclick = function() {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            // Aquí podrías añadir lógica de filtrado real
-        }
-    });
 
     initGlobalSync();
 };
