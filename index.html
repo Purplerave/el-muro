@@ -15,7 +15,6 @@
             --neo-shadow: 8px 8px 0px #000;
             --font-head: 'Bangers', cursive;
             --font-hand: 'Kalam', cursive;
-            --font-mono: 'Space Mono', monospace;
         }
 
         body { 
@@ -50,30 +49,38 @@
             cursor: pointer; font-weight: 900; box-shadow: 3px 3px 0px #000;
         }
 
-        /* --- BARRA DE ENTRADA --- */
+        /* --- BARRA DE ENTRADA TOTALMENTE HORIZONTAL --- */
         #input-bar { 
             position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); 
             width: 95%; max-width: 1100px; background: #fff !important; 
             border: var(--neo-border); box-shadow: var(--neo-shadow);
-            padding: 10px 20px; display: flex; align-items: center; gap: 15px; z-index: 9999;
+            padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; gap: 15px; z-index: 9999;
         }
 
-        .avatar-slot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000; overflow: hidden; cursor: pointer; flex-shrink: 0; }
+        .user-info { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .avatar-slot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000; overflow: hidden; cursor: pointer; }
         .avatar-slot img { width: 100%; height: 100%; object-fit: cover; }
         #user-alias { width: 80px; border: none; font-weight: 900; outline: none; border-bottom: 2px solid #000; background: transparent; }
-        .color-picker { display: flex; gap: 6px; }
+        
+        .color-picker { display: flex; gap: 6px; flex-shrink: 0; }
         .dot { width: 20px; height: 20px; border: 2px solid #000; border-radius: 50%; background: var(--c); cursor: pointer; }
         .dot.active { transform: scale(1.3); }
-        .input-main { flex: 1; border-bottom: 3px solid #000; }
-        #secret-input { width: 100%; border: none; font-family: var(--font-hand); font-size: 1.2rem; outline: none; background: transparent; }
-        .send-btn { background: #000; color: #fff; border: none; padding: 10px 25px; font-family: var(--font-head); font-size: 1.4rem; cursor: pointer; box-shadow: 4px 4px 0px #ff9500; }
 
-        /* --- DASHBOARD NEO-BRUTALISTA (OCULTO) --- */
-        #dashboard { 
-            position: fixed; right: -100%; top: 0; bottom: 0; width: 380px; 
-            background: #fff; border-left: var(--neo-border); z-index: 10000; 
-            transition: 0.5s; padding: 30px; overflow-y: auto;
+        .input-main { flex: 1; border-bottom: 3px solid #000; margin: 0 10px; min-width: 100px; }
+        #secret-input { width: 100%; border: none; font-family: var(--font-hand); font-size: 1.2rem; outline: none; background: transparent; }
+        
+        .send-btn { background: #000; color: #fff; border: none; padding: 10px 25px; font-family: var(--font-head); font-size: 1.4rem; cursor: pointer; box-shadow: 4px 4px 0px #ff9500; flex-shrink: 0; }
+
+        /* --- SELECCIÓN AVATAR --- */
+        #avatar-selector { 
+            position: absolute; bottom: 85px; left: 20px; background: #fff; 
+            border: var(--neo-border); box-shadow: var(--neo-shadow);
+            padding: 10px; display: none; grid-template-columns: repeat(3, 1fr); gap: 10px; z-index: 10000; 
         }
+        .av-opt { width: 45px; height: 45px; border-radius: 50%; cursor: pointer; border: 2px solid #eee; }
+
+        /* --- DASHBOARD --- */
+        #dashboard { position: fixed; right: -100%; top: 0; bottom: 0; width: 380px; background: #fff; border-left: var(--neo-border); z-index: 10000; transition: 0.5s; padding: 30px; overflow-y: auto; }
         #dashboard[aria-hidden="false"] { right: 0; }
 
         /* --- ANIMACIONES --- */
@@ -106,17 +113,31 @@
     </aside>
 
     <footer id="input-bar">
-        <div class="user-badge">
-            <div class="avatar-slot"><img id="my-avatar-img" src=""></div>
+        <div id="avatar-selector">
+            <img class="av-opt" data-seed="bot1" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot1">
+            <img class="av-opt" data-seed="bot2" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot2">
+            <img class="av-opt" data-seed="bot3" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot3">
+            <img class="av-opt" data-seed="bot4" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot4">
+            <img class="av-opt" data-seed="bot5" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot5">
+            <img class="av-opt" data-seed="bot6" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot6">
+        </div>
+        
+        <div class="user-info">
+            <div class="avatar-slot" id="avatar-btn"><img id="my-avatar-img" src=""></div>
             <input type="text" id="user-alias" placeholder="ALIAS">
         </div>
+
         <div class="color-picker" id="color-dots">
             <button class="dot active" style="--c:#fff9c4" data-color="#fff9c4"></button>
             <button class="dot" style="--c:#ff8a80" data-color="#ff8a80"></button>
-            <button class="dot" style="--c:#81c784" data-color="#81c784"></button>
+            <button class="dot" style="--c:#4caf50" data-color="#4caf50"></button>
             <button class="dot" style="--c:#81d4fa" data-color="#81d4fa"></button>
         </div>
-        <div class="input-main"><input type="text" id="secret-input" placeholder="¡Pega tu chiste...!" maxlength="300"></div>
+
+        <div class="input-main">
+            <input type="text" id="secret-input" placeholder="¡Pega tu chiste...!" maxlength="300">
+        </div>
+
         <button id="post-btn" class="send-btn">PEGAR</button>
     </footer>
 
@@ -166,18 +187,21 @@
 
             var field = (type === 'best' ? 'votes_best' : 'votes_bad');
             
-            // LLAMADA CON DEBUG
-            const { data, error } = await client.rpc('increment_vote', { 
-                joke_id: String(id), 
-                field_name: field, 
-                visitor_id: app.user.id 
+            // LLAMADA SINCRONIZADA CON EL SQL MAESTRO
+            const { error } = await client.rpc('increment_vote', { 
+                p_joke_id: String(id), 
+                p_field_name: field, 
+                p_voter_id: app.user.id 
             });
 
             if (error) {
-                console.error("Error completo:", error);
-                alert("FALLO EN BASE DE DATOS:\n" + error.message + "\nCódigo: " + error.code);
+                if (error.message.includes('VOTO_DUPLICADO')) {
+                    alert("¡YA HAS JUZGADO ESTE CHISTE!");
+                } else {
+                    alert("ERROR: " + error.message);
+                }
             } else {
-                initGlobalSync(); // Solo recarga si el servidor dio OK
+                initGlobalSync();
             }
         };
 
@@ -204,6 +228,7 @@
             app.user = loadUser();
             document.getElementById('my-avatar-img').src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (app.user.avatar || 'bot1');
             if(app.user.alias) document.getElementById('user-alias').value = app.user.alias;
+            
             document.getElementById('post-btn').onclick = async function() {
                 var txt = document.getElementById('secret-input').value;
                 var al = document.getElementById('user-alias').value;
@@ -211,6 +236,21 @@
                 await client.from('jokes').insert([{ text: txt, author: al, authorid: app.user.id, color: col, ts: new Date().toISOString() }]);
                 document.getElementById('secret-input').value = ''; initGlobalSync();
             };
+
+            document.getElementById('avatar-btn').onclick = function() {
+                var s = document.getElementById('avatar-selector');
+                s.style.display = (s.style.display === 'grid' ? 'none' : 'grid');
+            };
+
+            document.querySelectorAll('.av-opt').forEach(opt => {
+                opt.onclick = function() {
+                    app.user.avatar = this.dataset.seed;
+                    document.getElementById('my-avatar-img').src = this.src;
+                    localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user));
+                    document.getElementById('avatar-selector').style.display = 'none';
+                }
+            });
+
             document.getElementById('color-dots').onclick = function(e) {
                 var d = e.target.closest('.dot'); if(d) { document.querySelectorAll('.dot').forEach(el => el.classList.remove('active')); d.classList.add('active'); }
             };
