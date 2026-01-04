@@ -1,51 +1,51 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+--------------------------------------------------------------------------------
+--- NUEVO: CONFIGURACIÓN DE SEGURIDAD Y AUTH (ADMIN PANEL V2) ---
+--------------------------------------------------------------------------------
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+1. HABILITAR AUTH EN SUPABASE:
+   - Ve a Authentication -> Providers.
+   - Asegúrate de que "Email" está habilitado.
+   - Deshabilita "Confirm email" si quieres entrar directo sin verificar (opcional para admin único).
 
-  try {
-    const { memory } = await req.json()
-    const GROQ_KEY = Deno.env.get('GROQ_KEY')
+2. CREAR USUARIO ADMINISTRADOR:
+   - Ve a Authentication -> Users.
+   - Pulsa "Add User" -> "Create New User".
+   - Email: (Tu email personal)
+   - Password: (Una contraseña segura)
+   - Pulsa "Auto Confirm User" si tienes la opción.
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${GROQ_KEY}`, 
-        'Content-Type': 'application/json' 
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-oss-20b",
-        messages: [
-          { 
-            role: "system", 
-            content: "Eres un archivo de chistes CORTÍSIMOS españoles. Tu misión es dar un chiste de UNA SOLA LÍNEA o pregunta/respuesta. Máximo 15 palabras. Estilo: ¿Qué le dice...?, Jaimito, ¿Cómo se dice...? Ejemplo: '¿Qué hace una abeja en el gimnasio? Zumba.' NO INVENTES historias largas. Solo devuelve el texto del chiste corto seleccionado de tu memoria." 
-          },
-          { role: "user", content: "Dime un chiste clásico español cortísimo que no sea ninguno de estos: " + memory }
-        ],
-        temperature: 0.1, 
-        top_p: 0.1,
-        reasoning_effort: "low",
-        stream: false
-      })
-    })
-    
-    const data = await response.json()
-    const choice = data.choices && data.choices[0];
-    let joke = (choice && choice.message) ? (choice.message.content || choice.message.reasoning_content || "") : "";
-    joke = joke.trim().replace(/^"|"$/g, '');
+3. PROTEGER LA TABLA 'JOKES' (SQL EDITOR):
+   Ejecuta este SQL para asegurar que SOLO tú (authenticated) puedes borrar chistes, 
+   mientras que todo el mundo (anon) puede leer e insertar.
 
-    return new Response(JSON.stringify({ joke }), { 
-      headers: { ...corsHeaders, "Content-Type": "application/json" } 
-    })
-  } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { 
-      status: 500, 
-      headers: { ...corsHeaders, "Content-Type": "application/json" } 
-    })
-  }
-})
+   -- Habilitar RLS (si no estaba ya)
+   ALTER TABLE jokes ENABLE ROW LEVEL SECURITY;
+
+   -- Política para ver (Todo el mundo)
+   CREATE POLICY "Ver chistes" ON jokes FOR SELECT USING (true);
+
+   -- Política para insertar (Todo el mundo)
+   CREATE POLICY "Insertar chistes" ON jokes FOR INSERT WITH CHECK (true);
+
+   -- Política para actualizar (Votos - Todo el mundo)
+   -- Nota: Esto es un poco permisivo, idealmente usarías RPC para votos, 
+   -- pero si usas update directo necesitas esto.
+   CREATE POLICY "Votar chistes" ON jokes FOR UPDATE USING (true);
+
+   -- Política para BORRAR (SOLO ADMIN/AUTHENTICATED)
+   CREATE POLICY "Borrar solo admin" ON jokes FOR DELETE TO authenticated USING (true);
+
+4. RPC PARA VOTOS (Recomendado para seguridad):
+   (Ya deberías tener esto, pero por si acaso)
+   create or replace function increment_vote(joke_id bigint, field_name text, visitor_id text, device_fp text)
+   returns void as $$
+   begin
+     update jokes
+     set 
+       votes_best = case when field_name = 'votes_best' then votes_best + 1 else votes_best end,
+       votes_bad = case when field_name = 'votes_bad' then votes_bad + 1 else votes_bad end,
+       votes_save = case when field_name = 'votes_save' then votes_save + 1 else votes_save end
+     where id = joke_id;
+   end;
+   $$ language plpgsql security definer;

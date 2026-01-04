@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EL MURO | Panel de Administración</title>
+    <link rel="stylesheet" href="css/style.css?v=2.0">
+    <style>
+        /* Estilos específicos para el Admin Panel */
+        body.admin-mode {
+            background-color: #121212;
+            color: #eee;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+        }
+        
+        #login-container {
+            margin-top: 10vh;
+            background: #1e1e1e;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        #login-container h2 {
+            margin-bottom: 1.5rem;
+            color: #bb86fc;
+        }
+
+        .admin-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 1rem;
+            background: #333;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 4px;
+        }
+
+        .admin-btn {
+            width: 100%;
+            padding: 10px;
+            background: #bb86fc;
+            color: #000;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .admin-btn:hover { background: #9955e8; }
+        
+        .error-msg {
+            color: #cf6679;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        #admin-dashboard {
+            display: none; /* Oculto por defecto */
+            width: 95%;
+            max-width: 1200px;
+            margin-top: 2rem;
+        }
+
+        .dash-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #333;
+            padding-bottom: 1rem;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #1e1e1e;
+        }
+
+        .admin-table th, .admin-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+
+        .admin-table th { background: #2c2c2c; }
+
+        .btn-delete {
+            background: #cf6679;
+            color: black;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        
+        .btn-ban {
+            background: #ff9800;
+            color: black;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 3px;
+            margin-right: 5px;
+        }
+
+        .logout-btn {
+            background: transparent;
+            border: 1px solid #bb86fc;
+            color: #bb86fc;
+            padding: 5px 15px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="admin-mode">
+
+    <!-- LOGIN FORM -->
+    <div id="login-container">
+        <h2>🔒 Acceso Restringido</h2>
+        <input type="email" id="email" class="admin-input" placeholder="Email de Administrador">
+        <input type="password" id="password" class="admin-input" placeholder="Contraseña">
+        <button id="login-btn" class="admin-btn">Entrar</button>
+        <p id="login-error" class="error-msg">Credenciales incorrectas</p>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="admin-dashboard">
+        <div class="dash-header">
+            <h1>Panel de Control - El Muro</h1>
+            <button id="logout-btn" class="logout-btn">Cerrar Sesión</button>
+        </div>
+        
+        <div style="margin-bottom: 1rem; display: flex; gap: 10px;">
+             <button id="refresh-btn" class="admin-btn" style="width: auto;">🔄 Refrescar Lista</button>
+             <span id="status-msg" style="align-self: center; color: #aaa;"></span>
+        </div>
+
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">ID</th>
+                    <th>Texto</th>
+                    <th>Autor (Alias)</th>
+                    <th>Votos (👍/👎)</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="jokes-list">
+                <!-- Filas generadas por JS -->
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
