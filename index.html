@@ -203,7 +203,34 @@
 
         async function initGlobalSync() {
             var { data } = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(100);
-            if (data) { app.state.jokes = data; syncWall(); updateDashboard(); }
+            if (data) { 
+                app.state.jokes = data; 
+                syncWall(); 
+                updateDashboard(); 
+                checkDailyAIJoke(); // Restaurado
+            }
+        }
+
+        async function checkDailyAIJoke() {
+            var aiID = '00000000-0000-0000-0000-000000000000';
+            var lastAI = app.state.jokes.find(j => j.authorid === aiID);
+            
+            // Publicar cada 6 horas
+            if (!lastAI || (Date.now() - new Date(lastAI.ts).getTime() >= 21600000)) {
+                console.log(">>> SOLICITANDO INTERVENCIÓN DE LA IA...");
+                
+                // Le pasamos los chistes de la purga para que se burle
+                var victims = app.state.jokes
+                    .filter(j => (j.votes_bad||0) > (j.votes_best||0))
+                    .slice(0, 3)
+                    .map(j => j.text)
+                    .join(" | ");
+
+                await client.functions.invoke('generate-joke', { 
+                    body: { memory: victims } 
+                });
+                initGlobalSync();
+            }
         }
 
         function syncWall() {

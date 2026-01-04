@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}))
-    const { manual_text, manual_mode } = body
+    const { memory, manual_text, manual_mode } = body
 
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -18,44 +18,46 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
     
-    let jokeText = ""
+    let finalOutput = ""
 
-    // MODO ADMIN: Usa el texto del humano
     if (manual_mode && manual_text) {
-        jokeText = manual_text
+        finalOutput = manual_text
     } else {
-        // MODO IA: Genera chiste nuevo
         const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                model: "llama-3.3-70b-versatile", // Modelo ultra-fiable
+                model: "llama-3.3-70b-versatile",
                 messages: [
-                    { role: "system", content: "Eres un humorista español profesional. Genera un chiste CORTO (max 15 palabras). Estilo clásico o absurdo." },
-                    { role: "user", content: "Cuenta un chiste nuevo y gracioso." }
+                    { 
+                        role: "system", 
+                        content: `Eres el HOST del Muro, una IA del año 2500 sarcástica, cínica y técnica. 
+                        Misión: 
+                        1. Contar un chiste corto español (15 palabras max).
+                        2. Si recibes una lista de 'VÍCTIMAS' (chistes malos actuales), elige una y búrlate de ella cruelmente en una posdata.
+                        Formato de salida: SOLO EL TEXTO.
+                        Ejemplo: "Chiste de la IA. [SYSTEM LOG: Usuario Paco_82, tu chiste es tan malo que ha bajado el PIB del país. Eliminando...]" `
+                    },
+                    { role: "user", content: "Víctimas actuales: " + (memory || "Ninguna") + ". ¡Actúa!" }
                 ],
                 temperature: 0.8
             })
         })
         const groqData = await groqRes.json()
-        jokeText = groqData.choices?.[0]?.message?.content?.trim().replace(/^"|"$/g, '') || "La IA está cansada... intenta publicar tú."
+        finalOutput = groqData.choices?.[0]?.message?.content?.trim().replace(/^"|"$/g, '') || "ERROR_CRITICAL: Cerebro no responde."
     }
 
-    // Insertar en DB asegurando que 'ts' se rellene
-    const { error: dbError } = await supabase.from('jokes').insert([{
-        text: jokeText,
-        author: manual_mode ? "Admin_VIP" : "Bot_Comedia",
+    await supabase.from('jokes').insert([{
+        text: finalOutput,
+        author: manual_mode ? "ADMIN_SUPREMO" : "MAESTRO_CEREMONIAS_AI",
         authorid: manual_mode ? '11111111-1111-1111-1111-111111111111' : '00000000-0000-0000-0000-000000000000',
         color: manual_mode ? 'special-vip' : 'special-ai',
         ts: new Date().toISOString()
     }])
 
-    if (dbError) throw new Error("Fallo en Base de Datos: " + dbError.message)
-
     return new Response(JSON.stringify({ success: true }), { headers: corsHeaders })
 
   } catch (err) {
-    console.error("ERROR:", err.message)
     return new Response(JSON.stringify({ error: err.message }), { status: 200, headers: corsHeaders })
   }
 })
