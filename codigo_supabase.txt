@@ -1,51 +1,82 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
---------------------------------------------------------------------------------
---- NUEVO: CONFIGURACIÓN DE SEGURIDAD Y AUTH (ADMIN PANEL V2) ---
---------------------------------------------------------------------------------
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
-1. HABILITAR AUTH EN SUPABASE:
-   - Ve a Authentication -> Providers.
-   - Asegúrate de que "Email" está habilitado.
-   - Deshabilita "Confirm email" si quieres entrar directo sin verificar (opcional para admin único).
+serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
-2. CREAR USUARIO ADMINISTRADOR:
-   - Ve a Authentication -> Users.
-   - Pulsa "Add User" -> "Create New User".
-   - Email: (Tu email personal)
-   - Password: (Una contraseña segura)
-   - Pulsa "Auto Confirm User" si tienes la opción.
+  try {
+    const { memory } = await req.json()
+    const GROQ_KEY = Deno.env.get('GROQ_KEY')
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-3. PROTEGER LA TABLA 'JOKES' (SQL EDITOR):
-   Ejecuta este SQL para asegurar que SOLO tú (authenticated) puedes borrar chistes, 
-   mientras que todo el mundo (anon) puede leer e insertar.
+    // 1. Llamar a la IA (Groq) pidiendo JSON estructurado (Chiste + Prompt Imagen)
+    // Usamos llama3-8b-8192 que es rápido y soporta JSON mode mejor
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 
+        'Authorization': `Bearer ${GROQ_KEY}`, 
+        'Content-Type': 'application/json' 
+      },
+      body: JSON.stringify({
+        model: "llama3-8b-8192", 
+        messages: [
+          { 
+            role: "system", 
+            content: "Eres una IA comediante. Devuelve un objeto JSON con dos campos: 'joke' (un chiste corto español, máximo 15 palabras) y 'image_prompt' (descripción visual del chiste en inglés, estilo 'surrealist painting', muy corta). NO escribas nada más que el JSON." 
+          },
+          { role: "user", content: "Genera un chiste nuevo. Evita estos temas: " + memory }
+        ],
+        temperature: 0.6,
+        response_format: { type: "json_object" }
+      })
+    })
+    
+    const data = await response.json()
+    let content = data.choices?.[0]?.message?.content || "{}";
+    let parsed = {};
+    
+    try {
+        parsed = JSON.parse(content);
+    } catch(e) {
+        // Fallback si no devuelve JSON válido
+        parsed = { joke: content, image_prompt: "abstract colorful shapes" };
+    }
 
-   -- Habilitar RLS (si no estaba ya)
-   ALTER TABLE jokes ENABLE ROW LEVEL SECURITY;
+    const jokeText = parsed.joke || "Error generando chiste";
+    // Limpiamos el prompt para URL (solo letras y espacios)
+    const cleanPrompt = (parsed.image_prompt || "funny abstract").replace(/[^a-zA-Z0-9 ]/g, "");
+    // Generamos URL de Pollinations (GRATIS)
+    // seed aleatoria para que no cachee siempre la misma si el prompt es igual
+    const seed = Math.floor(Math.random() * 1000); 
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?seed=${seed}&width=400&height=300&nologo=true`;
 
-   -- Política para ver (Todo el mundo)
-   CREATE POLICY "Ver chistes" ON jokes FOR SELECT USING (true);
+    // 2. Insertar en DB
+    const fakeNames = ['Bot_Picasso', 'Dali_Digital', 'IA_Comedia', 'Robo_Risitas', 'Pixel_Joker'];
+    const randomName = fakeNames[Math.floor(Math.random() * fakeNames.length)];
+    
+    await supabase.from('jokes').insert([{ 
+        text: jokeText, 
+        author: randomName, 
+        authorid: '00000000-0000-0000-0000-000000000000', 
+        color: "#e1bee7", // Color especial lila para posts con imagen
+        avatar: 'bot' + (Math.floor(Math.random() * 6) + 1),
+        image_url: imageUrl
+    }]);
 
-   -- Política para insertar (Todo el mundo)
-   CREATE POLICY "Insertar chistes" ON jokes FOR INSERT WITH CHECK (true);
+    return new Response(JSON.stringify({ success: true }), { 
+      headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    })
 
-   -- Política para actualizar (Votos - Todo el mundo)
-   -- Nota: Esto es un poco permisivo, idealmente usarías RPC para votos, 
-   -- pero si usas update directo necesitas esto.
-   CREATE POLICY "Votar chistes" ON jokes FOR UPDATE USING (true);
-
-   -- Política para BORRAR (SOLO ADMIN/AUTHENTICATED)
-   CREATE POLICY "Borrar solo admin" ON jokes FOR DELETE TO authenticated USING (true);
-
-4. RPC PARA VOTOS (Recomendado para seguridad):
-   (Ya deberías tener esto, pero por si acaso)
-   create or replace function increment_vote(joke_id bigint, field_name text, visitor_id text, device_fp text)
-   returns void as $$
-   begin
-     update jokes
-     set 
-       votes_best = case when field_name = 'votes_best' then votes_best + 1 else votes_best end,
-       votes_bad = case when field_name = 'votes_bad' then votes_bad + 1 else votes_bad end,
-       votes_save = case when field_name = 'votes_save' then votes_save + 1 else votes_save end
-     where id = joke_id;
-   end;
-   $$ language plpgsql security definer;
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), { 
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    })
+  }
+})

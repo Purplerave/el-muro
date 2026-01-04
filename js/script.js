@@ -149,11 +149,31 @@ function createCard(joke) {
     el.className = 'post-it';
     el.id = 'joke-' + joke.id;
     el.style.setProperty('--bg-c', joke.color || '#fff9c4');
+    
+    // --- GAMIFICACIÓN VISUAL (RANGOS) ---
+    var votes = (joke.votes_best || 0);
+    var bads = (joke.votes_bad || 0);
+    
+    // Rango ORO (Emperador): +20 votos
+    if (votes >= 20) el.classList.add('rank-gold');
+    // Rango NEÓN (Bufón): +10 votos
+    else if (votes >= 10) el.classList.add('rank-neon');
+    // Rango PURGA (En peligro): Más malos que buenos
+    else if (bads > votes && bads >= 3) el.classList.add('rank-purge');
+    // ------------------------------------
+
     var authorImg = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (joke.avatar || 'bot1');
     var isVoted = app.user.voted.indexOf(joke.id) !== -1;
     var vClass = isVoted ? 'voted' : '';
 
-    el.innerHTML = '<div class="post-body">' + sanitize(joke.text) + '</div>' +
+    // --- IMAGEN GENERATIVA (Pollinations) ---
+    var imgHtml = '';
+    if (joke.image_url) {
+        imgHtml = '<img src="' + joke.image_url + '" class="joke-img" loading="lazy" alt="Arte absurdo generado por IA">';
+    }
+    // ----------------------------------------
+
+    el.innerHTML = '<div class="post-body">' + sanitize(joke.text) + imgHtml + '</div>' +
         '<div class="post-footer">' +
             '<div class="author-info"><img src="' + authorImg + '" style="width:24px;height:24px;border-radius:50%;background:#fff;border:1px solid #eee;margin-right:5px;"> ' + sanitize(joke.author) + '</div>' +
             '<div class="actions">' +
