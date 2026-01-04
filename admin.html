@@ -298,14 +298,17 @@
         });
 
         window.deleteJoke = async function(id) {
-            if(!confirm("¿Borrar chiste " + id + "?")) return;
-            // IMPORTANTE: id debe ser string para eq() si es UUID o BigInt
-            var { error } = await client.from('jokes').delete().eq('id', id);
+            if(!confirm("¿Borrar definitivamente?")) return;
+            
+            // Intentamos borrar por ID
+            const { error } = await client.from('jokes').delete().eq('id', id);
+            
             if (error) {
-                alert("Error Supabase: " + error.message);
+                console.error("Error al borrar:", error);
+                alert("No se pudo borrar: " + error.message);
             } else {
-                alert("Borrado ok.");
-                loadJokes();
+                alert("¡Chiste eliminado del muro!");
+                loadJokes(); // Refrescar lista
             }
         };
 
