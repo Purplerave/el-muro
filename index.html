@@ -47,6 +47,22 @@
             z-index: 5;
         }
 
+        /* ESPECIAL IA (TERMINAL HACKER) */
+        .post-it.special-ai {
+            background: #000 !important;
+            border-color: #00ff00 !important;
+            box-shadow: 10px 10px 0px #00ff00;
+        }
+        .post-it.special-ai::before { background: rgba(0, 255, 0, 0.2); }
+        .post-it.special-ai .post-body { 
+            font-family: var(--font-mono); 
+            color: #00ff00 !important; 
+            text-shadow: 0 0 5px #00ff00;
+            font-size: 1.1rem;
+        }
+        .post-it.special-ai .post-footer { border-top-color: #00ff00; color: #00ff00; }
+        .post-it.special-ai .act-btn { background: #000; color: #00ff00; border-color: #00ff00; }
+
         /* EFECTO BENTO */
         .post-it.wide { grid-column: span 2; }
         .post-it.wide .post-body { font-size: 2.2rem; font-weight: 900; }
@@ -188,6 +204,11 @@
         function createCard(j) {
             var el = document.createElement('article'); el.className = 'post-it'; el.id = 'joke-' + j.id;
             
+            // Si es la IA, le damos el look de terminal hacker
+            if (j.authorid === '00000000-0000-0000-0000-000000000000') {
+                el.classList.add('special-ai');
+            }
+
             // Rotación aleatoria (-2 a 2 grados) para efecto scrapbook
             var rot = (Math.random() * 4 - 2).toFixed(1);
             el.style.transform = `rotate(${rot}deg)`;
