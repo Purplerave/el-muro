@@ -105,11 +105,12 @@ function updateDashboard() {
     var pl = document.getElementById('purgatory-list');
     if (pl) {
         pl.innerHTML = worst.map(j => `
-            <div style="padding:10px; border-bottom:1px solid #eee;">
-                <strong>${sanitize(j.author)}</strong>: ${sanitize(j.text).substring(0,40)}...
-                <br><span style="color:red">🍅 ${j.votes_bad}</span>
+            <div class="purgatory-item">
+                <strong>${sanitize(j.author)}</strong>
+                ${sanitize(j.text).substring(0,60)}...
+                <br><span>🍅 ${j.votes_bad}</span>
             </div>
-        `).join('') || '<p>No hay nadie en la purga.</p>';
+        `).join('') || '<p style="font-weight:900; color:#666;">TRANQUILIDAD...<br>No hay nadie en la purga.</p>';
     }
 }
 
