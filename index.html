@@ -36,6 +36,10 @@
             display: flex; flex-direction: column; justify-content: space-between;
         }
 
+        /* EFECTO BENTO */
+        .post-it.wide { grid-column: span 2; }
+        @media (max-width: 768px) { .post-it.wide { grid-column: span 1; } }
+
         .post-body { font-family: var(--font-hand); font-size: 1.4rem; line-height: 1.2; color: #000; margin-bottom: 20px; }
 
         .post-footer { 
@@ -168,6 +172,12 @@
 
         function createCard(j) {
             var el = document.createElement('article'); el.className = 'post-it'; el.id = 'joke-' + j.id;
+            
+            // LÓGICA BENTO: ¿Debe ser ancho?
+            var isLong = (j.text || "").length > 100;
+            var isPopular = (j.votes_best || 0) > 10;
+            if (isLong || isPopular) el.classList.add('wide');
+
             el.style.setProperty('--bg-c', j.color || '#fff9c4');
             el.innerHTML = `<div class="post-body">${j.text}</div>
                 <div class="post-footer">
