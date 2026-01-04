@@ -1,5 +1,5 @@
 /**
- * EL MURO V37.4 - INDESTRUCTIBLE VERSION
+ * EL MURO V37.5 - THE FINAL COLOR FIX
  */
 
 var SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -8,7 +8,7 @@ var client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 var app = { state: { jokes: [] }, user: null };
 
-function genUUID() { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random() * 16 | 0, v = (c == 'x' ? r : (r & 0x3 | 0x8)); return v.toString(16); }); }
+function genUUID() { return crypto.randomUUID(); }
 
 function loadUser() {
     var u;
@@ -20,29 +20,17 @@ function loadUser() {
     return u;
 }
 
-function showToast(msg, type) {
-    var container = document.getElementById('toast-container');
-    if(!container) return;
-    var el = document.createElement('div');
-    el.className = 'toast show';
-    el.style.backgroundColor = (type === 'error' ? '#ff1744' : '#4caf50');
-    el.innerText = msg;
-    container.appendChild(el);
-    setTimeout(function() { el.remove(); }, 3000);
-}
-
 function sanitize(s) { 
     if(!s) return "";
     var d = document.createElement('div'); 
-    d.textContent = Array.from(s).slice(0, 300).join(''); 
+    d.textContent = s.substring(0, 300); 
     return d.innerHTML; 
 }
 
 async function initGlobalSync() {
     try {
-        // Intentamos cargar por created_at o ts (doble compatibilidad)
-        var res = await client.from('jokes').select('*').order('id', { ascending: false }).limit(100);
-        if (res.data) { app.state.jokes = res.data; syncWall(); }
+        var { data } = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(100);
+        if (data) { app.state.jokes = data; syncWall(); }
     } catch (e) { console.error(e); }
 }
 
@@ -57,27 +45,29 @@ function createCard(joke) {
     var el = document.createElement('article');
     el.className = 'post-it';
     
-    // EL VERDE TIENE QUE VERSE: Aplicamos color de fondo directo
+    // EL VERDE TIENE QUE VERSE: Aplicamos color de fondo directo con !important
     var color = joke.color || '#fff9c4';
-    el.style.backgroundColor = color;
-    el.style.setProperty('--bg-c', color); 
-
+    
     if (color === 'special-ai') el.classList.add('special-ai');
-    if (color === 'special-vip') el.classList.add('special-vip');
+    else if (color === 'special-vip') el.classList.add('special-vip');
+    else {
+        el.style.backgroundColor = color;
+        el.style.setProperty('background-color', color, 'important');
+    }
 
     el.innerHTML = '<div class="post-body">' + sanitize(joke.text) + '</div>' +
-        '<div class="post-footer">' +
-            '<div class="author-info">👤 ' + sanitize(joke.author) + '</div>' +
-            '<div class="actions">' +
-                '<button class="act-btn" onclick="vote("'+joke.id+'", "best")">🤣 ' + (joke.votes_best||0) + '</button>' +
-                '<button class="act-btn" onclick="vote("'+joke.id+'", "bad")">🍅 ' + (joke.votes_bad||0) + '</button>' +
-            '</div>' +
+        '<div class="post-footer">' + 
+            '<div class="author-info">👤 ' + sanitize(joke.author) + '</div>' + 
+            '<div class="actions">' + 
+                '<button class="act-btn" onclick="vote(\''+joke.id+'\', \'best\')">🤣 ' + (joke.votes_best||0) + '</button>' + 
+                '<button class="act-btn" onclick="vote(\''+joke.id+'\', \'bad\')">🍅 ' + (joke.votes_bad||0) + '</button>' + 
+            '</div>' + 
         '</div>';
     return el;
 }
 
 window.vote = async function(id, type) {
-    if (app.user.voted.indexOf(id) !== -1) return showToast('Ya votaste', 'error');
+    if (app.user.voted.indexOf(id) !== -1) return alert('Ya votaste');
     var field = (type === 'best' ? 'votes_best' : 'votes_bad');
     var { error } = await client.rpc('increment_vote', { joke_id: id, field_name: field });
     if (!error) { app.user.voted.push(id); localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user)); initGlobalSync(); }
@@ -86,25 +76,21 @@ window.vote = async function(id, type) {
 async function postJoke() {
     var txt = document.getElementById('secret-input').value.trim();
     var alias = document.getElementById('user-alias').value.trim();
-    if (alias.length < 2) return alert('¡Escribe tu ALIAS primero!');
-    if (txt.length < 3) return alert('¡Chiste muy corto!');
+    if (!alias) return alert('¡Pon tu ALIAS!');
+    if (txt.length < 3) return alert('Chiste muy corto');
     
     var dot = document.querySelector('.dot.active');
     var col = dot ? dot.getAttribute('data-color') : '#fff9c4';
     
-    console.log("Intentando publicar:", { txt, alias, col });
-
-    var { data, error } = await client.from('jokes').insert([{ 
-        text: txt, author: alias, authorid: app.user.id, color: col, avatar: 'bot1' 
+    var { error } = await client.from('jokes').insert([{ 
+        text: txt, author: alias, authorid: app.user.id, color: col, avatar: 'bot1', ts: new Date().toISOString()
     }]);
     
     if (!error) { 
         document.getElementById('secret-input').value = ''; 
-        alert('¡Publicado con éxito!'); 
         initGlobalSync(); 
     } else { 
-        console.error(error);
-        alert("Error Supabase: " + error.message); 
+        alert("Error: " + error.message); 
     }
 }
 
