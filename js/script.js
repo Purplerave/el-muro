@@ -1,5 +1,5 @@
 /**
- * EL MURO V37.1 - COLOR & STABILITY FIX
+ * EL MURO V37.2 - STABILITY & COLOR FIX
  */
 
 var SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -8,8 +8,7 @@ var client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 var app = {
     state: { jokes: [], sort: 'new', filterTerm: '' },
-    user: null,
-    isMuted: false
+    user: null
 };
 
 function genUUID() { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random() * 16 | 0, v = (c == 'x' ? r : (r & 0x3 | 0x8)); return v.toString(16); }); }
@@ -44,9 +43,10 @@ function sanitize(s) {
 
 async function initGlobalSync() {
     try {
-        var res = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(200);
-        if (res.data) { app.state.jokes = res.data; syncWall(); }
-    } catch (e) { console.error(e); }
+        var { data, error } = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(200);
+        if (error) throw error;
+        if (data) { app.state.jokes = data; syncWall(); }
+    } catch (e) { console.error("Error cargando chistes:", e); }
 }
 
 function syncWall() {
@@ -62,7 +62,7 @@ function createCard(joke) {
     el.className = 'post-it';
     el.id = 'joke-' + joke.id;
     
-    // CORRECCIÓN COLOR: Usamos variable CSS para que el verde se vea
+    // APLICACIÓN DE COLOR (CORREGIDA)
     if (joke.color === 'special-ai') el.classList.add('special-ai');
     else if (joke.color === 'special-vip') el.classList.add('special-vip');
     else el.style.setProperty('--bg-c', joke.color || '#fff9c4');
@@ -79,7 +79,7 @@ function createCard(joke) {
 
     el.innerHTML = '<div class="post-body">' + sanitize(joke.text) + '</div>' +
         '<div class="post-footer">' +
-            '<div class="author-info"><img src="' + authorImg + '"> ' + sanitize(joke.author) + '</div>' +
+            '<div class="author-info"><img src="' + authorImg + '" style="width:24px;height:24px;border-radius:50%"> ' + sanitize(joke.author) + '</div>' +
             '<div class="actions">' +
                 '<button class="act-btn btn-vote ' + vClass + '" data-id="' + joke.id + '" data-type="best">🤣 ' + votes + '</button>' +
                 '<button class="act-btn btn-vote ' + vClass + '" data-id="' + joke.id + '" data-type="bad">🍅 ' + bads + '</button>' +
@@ -89,32 +89,47 @@ function createCard(joke) {
 }
 
 window.vote = async function(id, type) {
-    if (app.user.voted.indexOf(id) !== -1) return showToast('Ya votaste', 'error');
+    if (app.user.voted.indexOf(id) !== -1) return showToast('Ya votaste este chiste', 'error');
     var field = (type === 'best' ? 'votes_best' : 'votes_bad');
     try {
-        var res = await client.rpc('increment_vote', { joke_id: id, field_name: field, visitor_id: app.user.id, device_fp: app.user.id });
-        if (!res.error) { app.user.voted.push(id); localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user)); initGlobalSync(); }
+        var { error } = await client.rpc('increment_vote', { joke_id: id, field_name: field, visitor_id: app.user.id, device_fp: app.user.id });
+        if (!error) { 
+            app.user.voted.push(id); 
+            localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user)); 
+            initGlobalSync(); 
+        }
     } catch(e) {}
 };
 
 async function postJoke() {
-    var txt = document.getElementById('secret-input').value.trim();
-    var alias = document.getElementById('user-alias').value.trim();
+    var input = document.getElementById('secret-input');
+    var aliasInput = document.getElementById('user-alias');
+    var txt = input.value.trim();
+    var alias = aliasInput.value.trim();
+
     if (alias.length < 2) return showToast('¡Pon tu ALIAS!', 'error');
     if (txt.length < 3) return showToast('Muy corto', 'error');
     
     var dot = document.querySelector('.dot.active');
     var col = dot ? dot.getAttribute('data-color') : '#fff9c4';
     
-    var { error } = await client.from('jokes').insert([{ 
-        text: txt, author: alias, authorid: app.user.id, color: col, avatar: app.user.avatar || 'bot1' 
-    }]);
-    
-    if (!error) { 
-        document.getElementById('secret-input').value = ''; 
-        showToast('¡Pegado!', 'success'); 
-        initGlobalSync(); 
-    } else { showToast(error.message, 'error'); }
+    var btn = document.getElementById('post-btn');
+    btn.disabled = true;
+
+    try {
+        var { error } = await client.from('jokes').insert([{ 
+            text: txt, author: alias, authorid: app.user.id, color: col, avatar: app.user.avatar || 'bot1' 
+        }]);
+        
+        if (!error) { 
+            input.value = ''; 
+            showToast('¡Pegado!', 'success'); 
+            initGlobalSync(); 
+        } else {
+            showToast("Error: " + error.message, 'error');
+        }
+    } catch(e) { showToast("Fallo de red", 'error'); }
+    btn.disabled = false;
 }
 
 window.onload = function() {
@@ -124,13 +139,22 @@ window.onload = function() {
     
     document.getElementById('post-btn').onclick = postJoke;
     
-    var dots = document.querySelectorAll('.dot');
-    for (var j=0; j<dots.length; j++) {
-        dots[j].onclick = function() {
-            var allD = document.querySelectorAll('.dot');
-            for (var k=0; k<allD.length; k++) allD[k].classList.remove('active');
+    // Delegación para dots
+    document.getElementById('color-dots').onclick = function(e) {
+        if(e.target.classList.contains('dot')) {
+            document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
+            e.target.classList.add('active');
+        }
+    };
+
+    // Filtros
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.onclick = function() {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-        };
-    }
+            // Aquí podrías añadir lógica de filtrado real
+        }
+    });
+
     initGlobalSync();
 };
