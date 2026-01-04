@@ -136,6 +136,15 @@
             <h1>Panel de Control - El Muro</h1>
             <button id="logout-btn" class="logout-btn">Cerrar Sesión</button>
         </div>
+
+        <!-- PUBLICACIÓN VIP -->
+        <div style="background:#2c2c2c; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #444;">
+            <h3 style="margin-top:0; color:#00e5ff;">✨ Publicación VIP (Con Arte IA)</h3>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="vip-text" class="admin-input" placeholder="Escribe tu chiste aquí..." style="margin-bottom:0;">
+                <button id="vip-btn" class="admin-btn" style="width:auto; background:#00e5ff; color:#000;">🎨 Publicar con Arte</button>
+            </div>
+        </div>
         
         <div style="margin-bottom: 1rem; display: flex; gap: 10px;">
              <button id="refresh-btn" class="admin-btn" style="width: auto;">🔄 Refrescar Lista</button>
@@ -250,7 +259,7 @@
                 var row = document.createElement('tr');
                 
                 var idCell = `<td>${joke.id}</td>`;
-                var textCell = `<td>${sanitize(joke.text).substring(0, 100)}...</td>`;
+                var textCell = `<td>${sanitize(joke.text).substring(0, 100)}... ${joke.image_url ? '🖼️' : ''}</td>`;
                 var authorCell = `<td>${sanitize(joke.author)} <br> <small style='color:#666'>${joke.authorid}</small></td>`;
                 var votesCell = `<td>🤣 ${joke.votes_best || 0} / 🍅 ${joke.votes_bad || 0}</td>`;
                 
@@ -264,6 +273,36 @@
                 jokesList.appendChild(row);
             });
         }
+
+        // --- PUBLICACIÓN VIP ---
+        document.getElementById('vip-btn').addEventListener('click', async function() {
+            var txt = document.getElementById('vip-text').value.trim();
+            if(txt.length < 3) return alert("Escribe algo...");
+            
+            if(!confirm("¿Publicar esto con imagen generada?")) return;
+            
+            this.disabled = true;
+            this.innerText = "Generando Arte...";
+
+            try {
+                // Llamamos a la Edge Function en modo manual
+                var res = await client.functions.invoke('generate-joke', { 
+                    body: { manual_mode: true, manual_text: txt } 
+                });
+
+                if (res.data && res.data.success) {
+                    alert("¡Publicado con éxito!");
+                    document.getElementById('vip-text').value = '';
+                    loadJokes();
+                } else {
+                    alert("Error: " + (res.error ? res.error.message : "Desconocido"));
+                }
+            } catch(e) {
+                alert("Error de red: " + e.message);
+            }
+            this.disabled = false;
+            this.innerText = "🎨 Publicar con Arte";
+        });
 
         window.deleteJoke = async function(id) {
             if(!confirm("¿Seguro que quieres borrar este chiste? Esta acción es irreversible.")) return;
