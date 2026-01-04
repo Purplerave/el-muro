@@ -106,11 +106,22 @@ async function loadJokes() {
 window.deleteJoke = async function(id) {
     if(!confirm("¿Seguro que quieres borrar este chiste? Esta acción es irreversible.")) return;
 
+    console.log("Intentando borrar ID:", id);
+    var session = await client.auth.getSession();
+    console.log("Estado sesión actual:", session);
+
+    if (!session.data.session) {
+        alert("Error: No parece haber una sesión activa. Intenta recargar y loguearte de nuevo.");
+        return;
+    }
+
     var { error } = await client.from('jokes').delete().eq('id', id);
     
     if (error) {
-        alert("Error al borrar: " + error.message);
+        console.error("Error Supabase:", error);
+        alert("Error al borrar: " + error.message + " | Code: " + error.code + " | Details: " + error.details);
     } else {
+        console.log("Borrado con éxito");
         loadJokes(); // Recargar lista
     }
 };
