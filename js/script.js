@@ -86,27 +86,44 @@ window.shareAsImage = function(id) {
 };
 
 window.vote = async function(id, type) {
-    if (app.user.voted.indexOf(id) !== -1) return;
-    
-    // --- EFECTOS VISUALES 2026 ---
     var card = document.getElementById('joke-' + id);
-    if (card) {
-        if (type === 'bad') {
-            card.classList.add('shake');
-            createSplat(card);
-            setTimeout(() => card.classList.remove('shake'), 400);
-        } else {
-            createConfetti(card);
-        }
-    }
-    // -----------------------------
+    if (!card) return;
 
+    // 1. EFECTOS VISUALES INSTANTÁNEOS (Siempre funcionan)
+    if (type === 'bad') {
+        card.classList.add('shake');
+        createSplat(card);
+        setTimeout(() => card.classList.remove('shake'), 400);
+    } else {
+        createConfetti(card);
+    }
+
+    // 2. ACTUALIZACIÓN VISUAL DEL NÚMERO (Optimistic UI)
+    var btn = card.querySelector(`button[onclick*="'${type}'"]`);
+    if (btn) {
+        var currentText = btn.innerText;
+        var emoji = currentText.split(' ')[0];
+        var count = parseInt(currentText.split(' ')[1]) || 0;
+        btn.innerHTML = `${emoji} ${count + 1}`;
+    }
+
+    // 3. LOGICA DE SERVIDOR
     var field = (type === 'best' ? 'votes_best' : 'votes_bad');
-    var { error } = await client.rpc('increment_vote', { joke_id: id, field_name: field, visitor_id: app.user.id });
-    if (!error) { 
+    var { error } = await client.rpc('increment_vote', { 
+        joke_id: id, 
+        field_name: field, 
+        visitor_id: app.user.id 
+    });
+
+    if (error) {
+        // Si el servidor falla (ej: ya votó), revertimos el número y avisamos
+        if (btn) btn.innerHTML = `${emoji} ${count}`;
+        console.warn("Voto rechazado:", error.message);
+        // Usamos un alert neo-brutalista
+        showToast("¡YA HAS JUZGADO ESTE CHISTE!", "error");
+    } else {
         app.user.voted.push(id); 
         localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user)); 
-        initGlobalSync(); 
     }
 };
 
