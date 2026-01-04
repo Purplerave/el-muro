@@ -285,20 +285,23 @@
             this.innerText = "Generando Arte...";
 
             try {
-                // Llamamos a la Edge Function en modo manual
-                var res = await client.functions.invoke('generate-joke', { 
+                // Llamamos a la Edge Function
+                var { data, error } = await client.functions.invoke('generate-joke', { 
                     body: { manual_mode: true, manual_text: txt } 
                 });
 
-                if (res.data && res.data.success) {
-                    alert("¡Publicado con éxito!");
+                if (error) {
+                    console.error("Error de Supabase:", error);
+                    alert("Error Supabase: " + error.message + "\nDetalles: " + JSON.stringify(error));
+                } else if (data && data.success) {
+                    alert("¡MENSAJE DEL SERVIDOR!: " + (data.msg || "Éxito"));
                     document.getElementById('vip-text').value = '';
                     loadJokes();
                 } else {
-                    alert("Error: " + (res.error ? res.error.message : "Desconocido"));
+                    alert("Respuesta inesperada: " + JSON.stringify(data));
                 }
             } catch(e) {
-                alert("Error de red: " + e.message);
+                alert("Error de Red/JS: " + e.message);
             }
             this.disabled = false;
             this.innerText = "🎨 Publicar con Arte";
