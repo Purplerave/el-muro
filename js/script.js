@@ -89,7 +89,7 @@ window.vote = async function(id, type) {
     var card = document.getElementById('joke-' + id);
     if (!card) return;
 
-    // 1. EFECTOS VISUALES INSTANTÁNEOS (Siempre funcionan)
+    // Animación instantánea
     if (type === 'bad') {
         card.classList.add('shake');
         createSplat(card);
@@ -98,32 +98,28 @@ window.vote = async function(id, type) {
         createConfetti(card);
     }
 
-    // 2. ACTUALIZACIÓN VISUAL DEL NÚMERO (Optimistic UI)
-    var btn = card.querySelector(`button[onclick*="'${type}'"]`);
-    if (btn) {
-        var currentText = btn.innerText;
-        var emoji = currentText.split(' ')[0];
-        var count = parseInt(currentText.split(' ')[1]) || 0;
-        btn.innerHTML = `${emoji} ${count + 1}`;
-    }
-
-    // 3. LOGICA DE SERVIDOR
+    // Lógica de servidor
     var field = (type === 'best' ? 'votes_best' : 'votes_bad');
+    console.log("Enviando voto:", { id, field, user: app.user.id });
+
     var { error } = await client.rpc('increment_vote', { 
-        joke_id: id, 
+        joke_id: String(id), 
         field_name: field, 
         visitor_id: app.user.id 
     });
 
     if (error) {
-        // Si el servidor falla (ej: ya votó), revertimos el número y avisamos
-        if (btn) btn.innerHTML = `${emoji} ${count}`;
-        console.warn("Voto rechazado:", error.message);
-        // Usamos un alert neo-brutalista
-        showToast("¡YA HAS JUZGADO ESTE CHISTE!", "error");
+        console.error("Error servidor:", error);
+        if (error.message.includes('VOTO_DUPLICADO')) {
+            showToast("¡YA HAS JUZGADO ESTE CHISTE!", "error");
+        } else {
+            alert("ERROR CRÍTICO: " + error.message + "\n\nCopia este error y dímelo.");
+        }
     } else {
         app.user.voted.push(id); 
-        localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user)); 
+        localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user));
+        // Actualizamos el número visualmente solo si el servidor dice OK
+        initGlobalSync(); 
     }
 };
 
