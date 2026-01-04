@@ -2,44 +2,59 @@
     --bg-office: #f4f4f2;
     --text-dark: #1a1a1a;
     --accent: #ff9500;
-    --danger: #ff1744;
     --font-head: 'Bangers', cursive;
     --font-hand: 'Kalam', cursive;
 }
 
-body { margin: 0; background: var(--bg-office); font-family: 'Inter', sans-serif; }
+body { margin: 0; background: var(--bg-office); font-family: 'Inter', sans-serif; padding-bottom: 100px; }
 
-/* EL MURAL */
-.auto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; padding: 20px; padding-bottom: 150px; }
+.auto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; padding: 20px; }
 
 .post-it { 
     background-color: var(--bg-c, #fff9c4) !important; 
-    padding: 25px; 
-    font-family: var(--font-hand); 
-    font-size: 1.3rem; 
-    box-shadow: 10px 10px 0 rgba(0,0,0,0.1); 
-    border: 3px solid #000;
-    transition: 0.3s;
+    padding: 20px; border: 3px solid #000; box-shadow: 8px 8px 0 rgba(0,0,0,0.1);
+    font-family: var(--font-hand); font-size: 1.2rem;
 }
 
-.post-it.special-ai { background: linear-gradient(135deg, #e1bee7, #ce93d8) !important; }
-.post-it.special-vip { background: linear-gradient(135deg, #b2e5fc, #81d4fa) !important; }
-
-/* BARRA DE ENTRADA */
+/* --- LA BARRA DEFINITIVA (UNA SOLA LÍNEA) --- */
 #input-bar { 
-    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); 
-    width: 95%; max-width: 900px; background: #fff !important; 
-    border: 4px solid #000; border-radius: 60px; padding: 12px 25px; 
-    display: flex; align-items: center; gap: 15px; z-index: 9999;
-    box-shadow: 15px 15px 0 rgba(0,0,0,0.2);
+    position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); 
+    width: 98%; max-width: 1100px; background: #fff !important; 
+    border: 3px solid #000; border-radius: 50px; padding: 5px 15px; 
+    display: flex; align-items: center; gap: 10px; z-index: 9999;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    flex-wrap: nowrap; /* Prohibido saltar de línea */
 }
 
-.dot { width: 24px; height: 24px; border: 2px solid #000; border-radius: 50%; background: var(--c); cursor: pointer; }
-.dot.active { transform: scale(1.3); box-shadow: 0 0 10px rgba(0,0,0,0.3); border-width: 3px; }
+.input-linear-container { display: flex; align-items: center; gap: 10px; width: 100%; flex-wrap: nowrap; }
 
-#secret-input { flex: 1; border: none; font-family: var(--font-hand); font-size: 1.3rem; outline: none; background: transparent; }
-.send-btn { background: #000; color: #fff; border: none; padding: 12px 30px; font-family: var(--font-head); font-size: 1.5rem; border-radius: 40px; cursor: pointer; }
+.user-badge { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.avatar-slot { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #000; background: #eee; overflow: hidden; flex-shrink: 0; }
+.avatar-slot img { width: 100%; height: 100%; object-fit: cover; }
+#user-alias { width: 60px; border: none; font-weight: 900; outline: none; font-size: 0.8rem; background: transparent; border-bottom: 1px solid #ccc; }
+
+.color-picker { display: flex; gap: 4px; flex-shrink: 0; }
+.dot { width: 18px; height: 18px; border: 1px solid #000; border-radius: 50%; background: var(--c); cursor: pointer; }
+.dot.active { transform: scale(1.2); border-width: 2px; }
+
+/* El recuadro de escritura */
+.input-main { 
+    flex: 1; 
+    background: #f9f9f9; 
+    border: 2px solid #eee; 
+    border-radius: 20px; 
+    padding: 2px 15px; 
+    display: flex; 
+    align-items: center; 
+}
+#secret-input { width: 100%; border: none; font-family: var(--font-hand); font-size: 1rem; outline: none; background: transparent; }
+
+.send-btn { 
+    background: #000; color: #fff; border: none; 
+    padding: 6px 15px; font-family: var(--font-head); 
+    font-size: 1.1rem; border-radius: 20px; cursor: pointer; flex-shrink: 0;
+}
 .send-btn:hover { background: #00ff00; color: #000; }
 
-.post-footer { display: flex; justify-content: space-between; margin-top: 15px; border-top: 2px dashed #000; padding-top: 10px; font-weight: bold; font-size: 0.9rem; }
-.act-btn { background: #fff; border: 2px solid #000; padding: 5px 10px; cursor: pointer; font-weight: 900; }
+.post-footer { display: flex; justify-content: space-between; margin-top: 10px; border-top: 1px dashed #000; padding-top: 5px; font-size: 0.8rem; }
+.act-btn { background: #fff; border: 1px solid #000; padding: 2px 6px; cursor: pointer; }
