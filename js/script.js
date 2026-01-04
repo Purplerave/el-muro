@@ -98,5 +98,23 @@ window.onload = function() {
             d.classList.add('active');
         }
     };
+    // Filtros
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.onclick = function() {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Si es el botón de Purga, abrimos el panel lateral
+            if (this.dataset.sort === 'controversial') {
+                document.getElementById('dashboard').setAttribute('aria-hidden', 'false');
+            }
+        }
+    });
+
+    // Cerrar Dashboard
+    document.getElementById('close-dash-btn').onclick = function() {
+        document.getElementById('dashboard').setAttribute('aria-hidden', 'true');
+    };
+
     initGlobalSync();
 };
