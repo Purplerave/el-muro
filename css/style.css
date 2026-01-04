@@ -1,109 +1,93 @@
 :root {
-    --bg-office: #f4f4f2;
+    --bg-office: #f0f0f0;
     --text-dark: #1a1a1a;
     --accent: #ff9500;
     --danger: #ff1744;
     --font-head: 'Bangers', cursive;
     --font-hand: 'Kalam', cursive;
-    --header-h: 120px;
 }
 
-body { margin: 0; background: var(--bg-office); color: var(--text-dark); font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+body { margin: 0; background: var(--bg-office); font-family: 'Inter', sans-serif; overflow-x: hidden; }
 
-.main-header { background: rgba(244, 244, 242, 0.95); backdrop-filter: blur(8px); border-bottom: 2px solid #ddd; position: sticky; top: 0; z-index: 1000; }
-.header-inner { max-width: 1400px; margin: 0 auto; padding: 10px 20px; }
-.header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-#title-sign .bot-line { font-family: var(--font-head); font-size: 2.2rem; color: var(--accent); text-shadow: 2px 2px 0 #000; -webkit-text-stroke: 1px #000; }
+/* --- EL MURAL --- */
+.auto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; padding: 20px; padding-bottom: 120px; }
 
-.search-bar { border: 2px solid #000; padding: 6px 12px; border-radius: 20px; outline: none; width: 160px; transition: 0.3s; font-size: 0.85rem; }
-.search-bar:focus { width: 200px; border-color: var(--accent); }
-
-.filter-bar { display: flex; gap: 5px; background: #eee; padding: 4px; border-radius: 10px; }
-.filter-btn { background: transparent; border: none; padding: 6px 12px; font-weight: 900; cursor: pointer; border-radius: 6px; font-size: 0.75rem; }
-.filter-btn.active { background: #000; color: #fff; }
-
-.auto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; padding-bottom: 120px; }
-.post-it { background: var(--bg-c, #fff9c4); padding: 20px; border-bottom: 4px solid rgba(0,0,0,0.1); font-family: var(--font-hand); font-size: 1.2rem; box-shadow: 5px 5px 15px rgba(0,0,0,0.05); transition: transform 0.2s; position: relative; }
-.post-it:hover { transform: scale(1.02) rotate(1deg); }
-
-/* --- NUEVOS ESTILOS RANGOS --- */
-.rank-gold { 
-    border: 3px solid #ffd700 !important; 
-    box-shadow: 0 0 15px #ffd700, inset 0 0 20px rgba(255, 215, 0, 0.2); 
-    animation: goldPulse 2s infinite;
-}
-@keyframes goldPulse { 0% { box-shadow: 0 0 10px #ffd700; } 50% { box-shadow: 0 0 25px #ffd700; } 100% { box-shadow: 0 0 10px #ffd700; } }
-
-.rank-neon { 
-    border: 2px solid #00e5ff !important; 
-    box-shadow: 0 0 10px #00e5ff; 
-}
-
-.rank-purge { 
-    border: 3px solid #ff1744 !important; 
-    box-shadow: 0 0 10px #ff1744;
-    animation: shake 0.5s infinite;
-}
-@keyframes shake { 0% { transform: rotate(1deg); } 50% { transform: rotate(-1deg); } 100% { transform: rotate(1deg); } }
-
-.joke-img {
-    width: 100%;
-    height: auto;
-    border-radius: 8px;
-    margin-top: 10px;
+.post-it { 
+    background: var(--bg-c, #fff9c4); 
+    padding: 25px; 
+    font-family: var(--font-hand); 
+    font-size: 1.25rem; 
+    box-shadow: 8px 8px 0 rgba(0,0,0,0.1); 
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    position: relative; 
     border: 2px solid #000;
-    transform: rotate(-2deg);
-    box-shadow: 3px 3px 0 #000;
 }
-/* ----------------------------- */
 
-.post-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 10px; font-size: 0.8rem; font-weight: bold; }
-.author-info { display: flex; align-items: center; gap: 6px; }
-.author-info img { width: 24px; height: 24px; border-radius: 50%; background: #fff; border: 1px solid #ddd; }
+.post-it:hover { transform: scale(1.05) rotate(2deg); z-index: 10; box-shadow: 15px 15px 0 rgba(0,0,0,0.15); }
 
-.act-btn { background: #fff; border: 1px solid #ddd; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
-.act-btn.voted { background: #000; color: #fff; }
+/* --- RANGOS VISUALES (GAMIFICACIÓN) --- */
 
-#input-bar { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 95%; max-width: 1000px; background: #fff; border: 2px solid #000; padding: 6px 15px; border-radius: 50px; z-index: 4000; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-.input-linear-container { display: flex; align-items: center; gap: 10px; width: 100%; }
-.user-badge { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.avatar-slot { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #000; background: #eee; overflow: hidden; cursor: pointer; flex-shrink: 0; }
-.avatar-slot img { width: 100%; height: 100%; display: block; }
-#user-alias { width: 70px; border: none; font-weight: 900; outline: none; font-size: 0.8rem; text-transform: uppercase; background: transparent; }
-
-.color-picker { display: flex; gap: 4px; flex-shrink: 0; }
-.dot { width: 16px; height: 16px; border: 1px solid #000; border-radius: 50%; background: var(--c); cursor: pointer; }
-.dot.active { transform: scale(1.3); }
-
-.input-main { flex: 1; position: relative; padding-left: 5px; } /* ELIMINADA LA RAYA BLANCA */
-#secret-input { width: 100%; border: none; font-family: var(--font-hand); font-size: 1.05rem; outline: none; background: transparent; }
-
-.send-btn { background: #000; color: #fff; border: none; padding: 8px 18px; font-family: var(--font-head); font-size: 1.1rem; border-radius: 30px; cursor: pointer; flex-shrink: 0; }
-
-#dashboard { position: fixed; right: -100%; top: 0; bottom: 0; width: 350px; background: #fff; border-left: 3px solid #000; z-index: 5000; transition: 0.4s; padding: 20px; overflow-y: auto; }
-#dashboard[aria-hidden="false"] { right: 0; }
-#close-dash-btn { position: absolute; top: 15px; right: 15px; width: 36px; height: 36px; background: #000; color: #fff; border: none; border-radius: 50%; cursor: pointer; z-index: 5100; font-weight: 900; }
-
-.dash-section { margin-bottom: 40px; }
-.dash-section h3 { font-family: var(--font-head); font-size: 1.8rem; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
-.danger-zone h3 { color: var(--danger); border-color: var(--danger); }
-.purge-desc { font-size: 0.9rem; color: #666; line-height: 1.4; margin-bottom: 20px; font-style: italic; }
-
-.rank-list { list-style: none; padding: 0; margin: 0; }
-.rank-list li { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; font-size: 0.9rem; }
-.rank-list li:last-child { border-bottom: none; }
-
-.av-grid { display: flex; gap: 8px; }
-.av-opt { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 1px solid #eee; }
-#avatar-selector { position: absolute; bottom: 65px; left: 20px; background: #fff; border: 2px solid #000; padding: 8px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 5000; display: none; }
-
-.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #000; color: #fff; padding: 10px 25px; border-radius: 50px; z-index: 6000; font-weight: bold; opacity: 0; transition: 0.3s; pointer-events: none; }
-.toast.show { opacity: 1; }
-
-.skeleton { background: #e0e0e0; height: 150px; border-radius: 10px; animation: pulse 1.5s infinite linear; }
-@keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
-
-@media (max-width: 768px) {
-    #dashboard { width: 100%; }
-    #user-alias, .color-picker { display: none; }
+/* TOP: Neón Azul */
+.rank-neon { 
+    border-color: #00f2ff !important;
+    box-shadow: 0 0 15px #00f2ff, 8px 8px 0 rgba(0,0,0,1);
 }
+
+/* ELITE: Oro Animado */
+.rank-gold { 
+    background: linear-gradient(135deg, #fff9c4 0%, #ffeb3b 100%) !important;
+    border-color: #ffd700 !important;
+    box-shadow: 0 0 25px #ffd700, 10px 10px 0 rgba(0,0,0,1);
+    animation: goldShine 3s infinite;
+}
+@keyframes goldShine { 0% { filter: brightness(1); } 50% { filter: brightness(1.2); } 100% { filter: brightness(1); } }
+
+/* PURGA: Desintegración (Borroso y tembloroso) */
+.rank-purge { 
+    opacity: 0.7;
+    filter: grayscale(0.8) blur(0.5px);
+    border-style: dashed !important;
+    border-color: var(--danger) !important;
+    animation: jitter 0.2s infinite;
+}
+@keyframes jitter {
+    0% { transform: translate(0,0); }
+    25% { transform: translate(1px, -1px); }
+    50% { transform: translate(-1px, 1px); }
+    75% { transform: translate(1px, 1px); }
+    100% { transform: translate(0,0); }
+}
+
+/* BOT IA / ADMIN: Degradados Modernos */
+.post-it[style*="special-ai"] { 
+    background: linear-gradient(135deg, #e1bee7, #ce93d8) !important; 
+    border-style: double;
+    border-width: 4px;
+}
+.post-it[style*="special-vip"] { 
+    background: linear-gradient(135deg, #b2e5fc, #81d4fa) !important;
+    font-weight: bold;
+}
+
+/* --- REACCIONES (PARTÍCULAS) --- */
+.burst {
+    position: absolute;
+    pointer-events: none;
+    font-size: 1.5rem;
+    animation: floatUp 0.8s forwards ease-out;
+    z-index: 1000;
+}
+@keyframes floatUp {
+    0% { transform: translate(0,0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--x), var(--y)) scale(2); opacity: 0; }
+}
+
+/* Estilos de Header e Input (Limpios) */
+.main-header { background: #fff; border-bottom: 3px solid #000; padding: 15px; position: sticky; top: 0; z-index: 100; }
+.header-inner { display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; }
+#title-sign { font-family: var(--font-head); font-size: 2.5rem; color: #000; margin: 0; }
+
+#input-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 800px; background: #fff; border: 3px solid #000; border-radius: 15px; padding: 10px 20px; display: flex; gap: 15px; align-items: center; box-shadow: 10px 10px 0 rgba(0,0,0,0.2); }
+#secret-input { flex: 1; border: none; font-family: var(--font-hand); font-size: 1.2rem; outline: none; }
+.send-btn { background: #000; color: #fff; border: none; padding: 10px 25px; font-family: var(--font-head); font-size: 1.2rem; cursor: pointer; border-radius: 8px; }
+.send-btn:hover { background: var(--accent); color: #000; }

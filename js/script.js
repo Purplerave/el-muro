@@ -148,34 +148,31 @@ function createCard(joke) {
     var el = document.createElement('article');
     el.className = 'post-it';
     el.id = 'joke-' + joke.id;
-    el.style.setProperty('--bg-c', joke.color || '#fff9c4');
     
-    // --- GAMIFICACIÓN VISUAL (RANGOS) ---
+    // Manejo de colores especiales (AI / VIP)
+    if (joke.color === 'special-ai' || joke.color === 'special-vip') {
+        el.style.setProperty('--bg-c', 'transparent'); 
+    } else {
+        el.style.setProperty('--bg-c', joke.color || '#fff9c4');
+        el.style.backgroundColor = 'var(--bg-c)';
+    }
+    
+    // --- GAMIFICACIÓN VISUAL (RANGOS DINÁMICOS) ---
     var votes = (joke.votes_best || 0);
     var bads = (joke.votes_bad || 0);
     
-    // Rango ORO (Emperador): +20 votos
-    if (votes >= 20) el.classList.add('rank-gold');
-    // Rango NEÓN (Bufón): +10 votos
-    else if (votes >= 10) el.classList.add('rank-neon');
-    // Rango PURGA (En peligro): Más malos que buenos
+    if (votes >= 15) el.classList.add('rank-gold');
+    else if (votes >= 7) el.classList.add('rank-neon');
     else if (bads > votes && bads >= 3) el.classList.add('rank-purge');
-    // ------------------------------------
+    // ----------------------------------------------
 
     var authorImg = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (joke.avatar || 'bot1');
     var isVoted = app.user.voted.indexOf(joke.id) !== -1;
     var vClass = isVoted ? 'voted' : '';
 
-    // --- IMAGEN GENERATIVA (Pollinations) ---
-    var imgHtml = '';
-    if (joke.image_url) {
-        imgHtml = '<img src="' + joke.image_url + '" class="joke-img" loading="lazy" alt="Arte absurdo generado por IA">';
-    }
-    // ----------------------------------------
-
-    el.innerHTML = '<div class="post-body">' + sanitize(joke.text) + imgHtml + '</div>' +
+    el.innerHTML = '<div class="post-body">' + sanitize(joke.text) + '</div>' +
         '<div class="post-footer">' +
-            '<div class="author-info"><img src="' + authorImg + '" style="width:24px;height:24px;border-radius:50%;background:#fff;border:1px solid #eee;margin-right:5px;"> ' + sanitize(joke.author) + '</div>' +
+            '<div class="author-info"><img src="' + authorImg + '"> ' + sanitize(joke.author) + '</div>' +
             '<div class="actions">' +
                 '<button class="act-btn btn-share" data-id="' + joke.id + '">📸</button>' +
                 '<button class="act-btn btn-vote ' + vClass + '" data-id="' + joke.id + '" data-type="best">🤣 ' + (joke.votes_best||0) + '</button>' +
@@ -199,10 +196,11 @@ window.shareAsImage = function(id) {
 };
 
 window.vote = async function(id, type) {
-    // Si es voto normal (best/bad), chequeamos si ya votó. Si es 'save', permitimos (o podríamos limitar también).
-    // Asumimos que 'save' es una acción especial que permite votar aunque hayas votado risa/tomate.
     if (type !== 'save' && app.user.voted.indexOf(id) !== -1) return showToast('Ya has votado este chiste', 'error');
     
+    // --- EFECTO PARTÍCULAS (BURST) ---
+    createBurst(id, type === 'best' ? '🤣' : (type === 'save' ? '🛡️' : '🍅'));
+
     var field = 'votes_best';
     if (type === 'bad') field = 'votes_bad';
     if (type === 'save') field = 'votes_save';
@@ -219,12 +217,25 @@ window.vote = async function(id, type) {
                 showToast("🛡️ ¡Indulto registrado!");
             }
             initGlobalSync();
-        } else {
-            console.error(res.error);
-            if (type === 'save') showToast("Error: Faltan columnas en DB", 'error');
         }
     } catch(e) {}
 };
+
+function createBurst(id, emoji) {
+    var card = document.getElementById('joke-' + id);
+    if (!card) return;
+    for (var i = 0; i < 6; i++) {
+        var el = document.createElement('div');
+        el.className = 'burst';
+        el.innerText = emoji;
+        el.style.left = '50%';
+        el.style.top = '50%';
+        el.style.setProperty('--x', (Math.random() * 200 - 100) + 'px');
+        el.style.setProperty('--y', (Math.random() * -200 - 50) + 'px');
+        card.appendChild(el);
+        (function(c){ setTimeout(function(){ if(c) c.remove(); }, 800); })(el);
+    }
+}
 
 async function postJoke() {
     var input = document.getElementById('secret-input');
