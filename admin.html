@@ -285,23 +285,27 @@
             this.innerText = "Generando Arte...";
 
             try {
-                // Llamamos a la Edge Function
-                var { data, error } = await client.functions.invoke('generate-joke', { 
-                    body: { manual_mode: true, manual_text: txt } 
+                // Usamos FETCH directo para evitar errores de la librería client
+                const response = await fetch('https://vqdzidtiyqsuxnlaztmf.supabase.co/functions/v1/generate-joke', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_KEY
+                    },
+                    body: JSON.stringify({ manual_mode: true, manual_text: txt })
                 });
 
-                if (error) {
-                    console.error("Error de Supabase:", error);
-                    alert("Error Supabase: " + error.message + "\nDetalles: " + JSON.stringify(error));
-                } else if (data && data.success) {
-                    alert("¡MENSAJE DEL SERVIDOR!: " + (data.msg || "Éxito"));
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    alert("¡RESPUESTA DEL SERVIDOR!: " + data.msg);
                     document.getElementById('vip-text').value = '';
                     loadJokes();
                 } else {
-                    alert("Respuesta inesperada: " + JSON.stringify(data));
+                    alert("Error del Servidor: " + JSON.stringify(data));
                 }
             } catch(e) {
-                alert("Error de Red/JS: " + e.message);
+                alert("Error de Conexión: " + e.message);
             }
             this.disabled = false;
             this.innerText = "🎨 Publicar con Arte";
