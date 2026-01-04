@@ -89,37 +89,26 @@ async function checkDailyAIJoke() {
     var jokes = app.state.jokes || [];
     var lastAI = jokes.filter(function(j) { return j.authorid === aiID; })[0];
     
-    // Nombres aleatorios para la "mentirijilla"
-    var fakeNames = ['Paco_82', 'Cris_Smile', 'El_Cuñao', 'Javi_Comedia', 'Rosa_M', 'Gamer_Chiste', 'Luisito_99', 'Sara_LOL', 'Marcos_R', 'Dany_V', 'Marta_G', 'Toni_Chistes', 'Super_Pepa', 'Nico_B', 'Elena_Sky'];
-
+    // Si hace más de 6h que no publica la IA
     if (!lastAI || (Date.now() - new Date(lastAI.ts).getTime() >= 21600000)) {
-        isGeneratingAI = true; // Activamos bloqueo
-        console.log("-> Solicitando nuevo chiste a Groq (GPT OSS 20B)...");
+        isGeneratingAI = true; 
+        console.log("-> Solicitando nuevo chiste a la Nube (Edge Function)...");
         try {
-            // Obtenemos memoria para no repetir
             var memory = jokes.slice(0, 5).map(function(j) { return j.text; }).join(" | ");
             
+            // Llamamos a la función. Ella insertará el chiste si todo va bien.
             var res = await client.functions.invoke('generate-joke', { 
                 body: { memory: memory } 
             });
             
-            if (res.data && res.data.joke) {
-                var randomName = fakeNames[Math.floor(Math.random() * fakeNames.length)];
-                var randomAvatar = 'bot' + (Math.floor(Math.random() * 6) + 1);
-
-                await client.from('jokes').insert([{ 
-                    text: res.data.joke, 
-                    author: randomName, 
-                    authorid: aiID, 
-                    color: "#fff9c4", 
-                    avatar: randomAvatar
-                }]);
-                isGeneratingAI = false; // Liberamos bloqueo tras éxito
-                initGlobalSync();
+            if (res.data && res.data.success) {
+                console.log("IA ha publicado un nuevo chiste.");
+                initGlobalSync(); // Refrescamos para verlo
             }
+            isGeneratingAI = false; 
         } catch(e) { 
-            isGeneratingAI = false; // Liberamos bloqueo en error
-            console.warn("IA de Groq no disponible temporalmente"); 
+            isGeneratingAI = false; 
+            console.warn("Error invocando IA:", e); 
         }
     }
 }
