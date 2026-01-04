@@ -291,7 +291,9 @@
         function sanitize(s) { 
             if(!s) return "";
             var d = document.createElement('div'); 
-            d.textContent = s; 
+            // Usamos Array.from para no romper emojis (pares sustitutos)
+            var clean = Array.from(s).slice(0, 300).join('');
+            d.textContent = clean; 
             return d.innerHTML; 
         }
 

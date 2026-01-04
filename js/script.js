@@ -63,7 +63,9 @@ function showToast(msg, type) {
 function sanitize(s) { 
     if(!s) return "";
     var d = document.createElement('div'); 
-    d.textContent = s.substring(0, 300); // Cortamos antes de escapar
+    // Usamos Array.from para no romper emojis (pares sustitutos)
+    var clean = Array.from(s).slice(0, 300).join('');
+    d.textContent = clean; 
     return d.innerHTML; 
 }
 
@@ -224,6 +226,14 @@ async function postJoke() {
     if (alias.length < 2) return showToast('¡Pon tu ALIAS para publicar!', 'error');
     if (txt.length < 3) return showToast('Chiste muy corto', 'error');
     
+    // --- RATE LIMITING (Anti-Spam) ---
+    var lastPost = localStorage.getItem('last_post_time');
+    var now = Date.now();
+    if (lastPost && (now - lastPost < 60000)) { // 60 segundos de espera
+        var wait = Math.ceil((60000 - (now - lastPost)) / 1000);
+        return showToast('⏳ Espera ' + wait + 's para publicar otro.', 'error');
+    }
+
     var btn = document.getElementById('post-btn');
     btn.disabled = true;
 
@@ -243,6 +253,7 @@ async function postJoke() {
         
         if (!res.error) { 
             input.value = ''; 
+            localStorage.setItem('last_post_time', Date.now()); // Guardamos timestamp
             playSound('post'); 
             showToast('¡Pegado!'); 
             app.user.alias = alias;
