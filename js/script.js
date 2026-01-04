@@ -87,6 +87,20 @@ window.shareAsImage = function(id) {
 
 window.vote = async function(id, type) {
     if (app.user.voted.indexOf(id) !== -1) return;
+    
+    // --- EFECTOS VISUALES 2026 ---
+    var card = document.getElementById('joke-' + id);
+    if (card) {
+        if (type === 'bad') {
+            card.classList.add('shake');
+            createSplat(card);
+            setTimeout(() => card.classList.remove('shake'), 400);
+        } else {
+            createConfetti(card);
+        }
+    }
+    // -----------------------------
+
     var field = (type === 'best' ? 'votes_best' : 'votes_bad');
     var { error } = await client.rpc('increment_vote', { joke_id: id, field_name: field, visitor_id: app.user.id });
     if (!error) { 
@@ -95,6 +109,29 @@ window.vote = async function(id, type) {
         initGlobalSync(); 
     }
 };
+
+function createSplat(card) {
+    var splat = document.createElement('div');
+    splat.className = 'tomato-splat';
+    splat.style.left = (Math.random() * 60 + 20) + '%';
+    splat.style.top = (Math.random() * 60 + 20) + '%';
+    card.appendChild(splat);
+    setTimeout(() => splat.remove(), 500);
+}
+
+function createConfetti(card) {
+    for (var i = 0; i < 15; i++) {
+        var c = document.createElement('div');
+        c.className = 'confetti';
+        c.style.left = '50%';
+        c.style.top = '50%';
+        c.style.setProperty('--x', (Math.random() * 300 - 150) + 'px');
+        c.style.setProperty('--y', (Math.random() * -300 - 50) + 'px');
+        c.style.backgroundColor = ['#81c784', '#ffeb3b', '#2196f3'][Math.floor(Math.random()*3)];
+        card.appendChild(c);
+        (function(el){ setTimeout(() => el.remove(), 1000); })(c);
+    }
+}
 
 function updateDashboard() {
     var list = app.state.jokes || [];
