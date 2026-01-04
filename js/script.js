@@ -1,12 +1,15 @@
 /**
- * EL MURO V38.3 - COMPACT & COMPLETE
+ * EL MURO V38.4 - FULL FEATURES RESTORED
  */
 
 var SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZHppZHRpeXFzdXhubGF6dG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyODIxNTIsImV4cCI6MjA4Mjg1ODE1Mn0.ZmDwXQ_5Rg6mTBM8JS4eDYQoBvH9ceQmHL-ELKqdWVA';
 var client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-var app = { state: { jokes: [] }, user: null };
+var app = {
+    state: { jokes: [], sort: 'new' },
+    user: null
+};
 
 function loadUser() {
     var u;
@@ -25,39 +28,90 @@ function sanitize(s) {
 
 async function initGlobalSync() {
     try {
-        var { data } = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(50);
-        if (data) { app.state.jokes = data; syncWall(); }
-    } catch (e) {}
+        var { data } = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(100);
+        if (data) { 
+            app.state.jokes = data; 
+            syncWall(); 
+            updateDashboard();
+        }
+    } catch (e) { console.error(e); }
 }
 
 function syncWall() {
     var container = document.getElementById('mural');
     if(!container) return;
     container.innerHTML = '';
-    app.state.jokes.forEach(function(j) { container.appendChild(createCard(j)); });
+    
+    var list = app.state.jokes.slice();
+    if (app.state.sort === 'best') {
+        list.sort((a,b) => (b.votes_best||0) - (a.votes_best||0));
+    } else if (app.state.sort === 'controversial') {
+        list = list.filter(j => (j.votes_bad||0) > (j.votes_best||0));
+        list.sort((a,b) => (b.votes_bad||0) - (a.votes_bad||0));
+    }
+
+    list.forEach(j => container.appendChild(createCard(j)));
 }
 
 function createCard(joke) {
     var el = document.createElement('article');
     el.className = 'post-it';
+    el.id = 'joke-' + joke.id;
     el.style.setProperty('--bg-c', joke.color || '#fff9c4');
+    
+    var votes = (joke.votes_best || 0);
+    var bads = (joke.votes_bad || 0);
+
     el.innerHTML = '<div class="post-body">' + sanitize(joke.text) + '</div>' +
-        '<div class="post-footer">' +
-            '<div>👤 ' + sanitize(joke.author) + '</div>' +
-            '<div class="actions">' +
-                '<button class="act-btn" onclick="vote(\''+joke.id+'\', \'best\')">🤣 ' + (joke.votes_best||0) + '</button>' +
-                '<button class="act-btn" onclick="vote(\''+joke.id+'\', \'bad\')">🍅 ' + (joke.votes_bad||0) + '</button>' +
-            '</div>' +
+        '<div class="post-footer">' + 
+            '<div>👤 ' + sanitize(joke.author) + '</div>' + 
+            '<div class="actions">' + 
+                '<button class="act-btn" onclick="shareAsImage("'+joke.id+'")">📸</button>' + 
+                '<button class="act-btn" onclick="vote("'+joke.id+'", "best")">🤣 ' + votes + '</button>' + 
+                '<button class="act-btn" onclick="vote("'+joke.id+'", "bad")">🍅 ' + bads + '</button>' + 
+            '</div>' + 
         '</div>';
     return el;
 }
+
+window.shareAsImage = function(id) {
+    var card = document.getElementById('joke-' + id);
+    if (!card) return;
+    html2canvas(card, { scale: 2 }).then(canvas => {
+        var link = document.createElement('a');
+        link.download = 'chiste-muro.png';
+        link.href = canvas.toDataURL();
+        link.click();
+    });
+};
 
 window.vote = async function(id, type) {
     if (app.user.voted.indexOf(id) !== -1) return;
     var field = (type === 'best' ? 'votes_best' : 'votes_bad');
     var { error } = await client.rpc('increment_vote', { joke_id: id, field_name: field, visitor_id: app.user.id });
-    if (!error) { app.user.voted.push(id); localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user)); initGlobalSync(); }
+    if (!error) { 
+        app.user.voted.push(id); 
+        localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user)); 
+        initGlobalSync(); 
+    }
 };
+
+function updateDashboard() {
+    var list = app.state.jokes || [];
+    var worst = list.filter(j => (j.votes_bad||0) > (j.votes_best||0))
+                    .sort((a,b) => (b.votes_bad||0) - (a.votes_bad||0))
+                    .slice(0, 3);
+    
+    var pl = document.getElementById('purgatory-list');
+    if (pl) {
+        pl.innerHTML = worst.map(j => `
+            <div style="padding:10px; border-bottom:1px solid #eee;">
+                <strong>${sanitize(j.author)}</strong>: ${sanitize(j.text).substring(0,40)}...
+                <br><span style="color:red">🍅 ${j.votes_bad}</span>
+            </div>
+        `).join('') || '<p>No hay nadie en la purga.</p>';
+    }
+}
 
 async function postJoke() {
     var input = document.getElementById('secret-input');
@@ -77,16 +131,14 @@ window.onload = function() {
     
     document.getElementById('post-btn').onclick = postJoke;
     
-    // Avatar Click
     document.getElementById('avatar-btn').onclick = function() {
         var s = document.getElementById('avatar-selector');
         s.style.display = (s.style.display === 'grid' ? 'none' : 'grid');
     };
 
-    document.querySelectorAll('.av-opt').forEach(function(opt) {
+    document.querySelectorAll('.av-opt').forEach(opt => {
         opt.onclick = function() {
-            var seed = this.dataset.seed;
-            app.user.avatar = seed;
+            app.user.avatar = this.dataset.seed;
             document.getElementById('my-avatar-img').src = this.src;
             localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user));
             document.getElementById('avatar-selector').style.display = 'none';
@@ -96,9 +148,26 @@ window.onload = function() {
     document.getElementById('color-dots').onclick = function(e) {
         var d = e.target.closest('.dot');
         if(d) {
-            document.querySelectorAll('.dot').forEach(function(el){ el.classList.remove('active'); });
+            document.querySelectorAll('.dot').forEach(el => el.classList.remove('active'));
             d.classList.add('active');
         }
+    };
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.onclick = function() {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            app.state.sort = this.dataset.sort;
+            if (this.dataset.sort === 'controversial') {
+                document.getElementById('dashboard').setAttribute('aria-hidden', 'false');
+            } else {
+                syncWall();
+            }
+        }
+    });
+
+    document.getElementById('close-dash-btn').onclick = function() {
+        document.getElementById('dashboard').setAttribute('aria-hidden', 'true');
     };
 
     initGlobalSync();
