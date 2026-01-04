@@ -38,7 +38,11 @@
 
         /* EFECTO BENTO */
         .post-it.wide { grid-column: span 2; }
-        @media (max-width: 768px) { .post-it.wide { grid-column: span 1; } }
+        .post-it.wide .post-body { font-size: 2.2rem; font-weight: 900; }
+        @media (max-width: 768px) { 
+            .post-it.wide { grid-column: span 1; } 
+            .post-it.wide .post-body { font-size: 1.6rem; }
+        }
 
         .post-body { font-family: var(--font-hand); font-size: 1.4rem; line-height: 1.2; color: #000; margin-bottom: 20px; }
 
@@ -173,6 +177,10 @@
         function createCard(j) {
             var el = document.createElement('article'); el.className = 'post-it'; el.id = 'joke-' + j.id;
             
+            // Rotación aleatoria (-2 a 2 grados) para efecto scrapbook
+            var rot = (Math.random() * 4 - 2).toFixed(1);
+            el.style.transform = `rotate(${rot}deg)`;
+
             // LÓGICA BENTO: ¿Debe ser ancho?
             var isLong = (j.text || "").length > 100;
             var isPopular = (j.votes_best || 0) > 10;
