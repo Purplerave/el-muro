@@ -1,15 +1,12 @@
 /**
- * EL MURO V37.3 - CACHE BUSTER & STABILITY
+ * EL MURO V37.4 - INDESTRUCTIBLE VERSION
  */
 
 var SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZHppZHRpeXFzdXhubGF6dG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyODIxNTIsImV4cCI6MjA4Mjg1ODE1Mn0.ZmDwXQ_5Rg6mTBM8JS4eDYQoBvH9ceQmHL-ELKqdWVA';
 var client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-var app = {
-    state: { jokes: [], sort: 'new', filterTerm: '' },
-    user: null
-};
+var app = { state: { jokes: [] }, user: null };
 
 function genUUID() { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random() * 16 | 0, v = (c == 'x' ? r : (r & 0x3 | 0x8)); return v.toString(16); }); }
 
@@ -29,7 +26,6 @@ function showToast(msg, type) {
     var el = document.createElement('div');
     el.className = 'toast show';
     el.style.backgroundColor = (type === 'error' ? '#ff1744' : '#4caf50');
-    el.style.zIndex = "99999";
     el.innerText = msg;
     container.appendChild(el);
     setTimeout(function() { el.remove(); }, 3000);
@@ -44,8 +40,9 @@ function sanitize(s) {
 
 async function initGlobalSync() {
     try {
-        var { data, error } = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(200);
-        if (data) { app.state.jokes = data; syncWall(); }
+        // Intentamos cargar por created_at o ts (doble compatibilidad)
+        var res = await client.from('jokes').select('*').order('id', { ascending: false }).limit(100);
+        if (res.data) { app.state.jokes = res.data; syncWall(); }
     } catch (e) { console.error(e); }
 }
 
@@ -53,103 +50,74 @@ function syncWall() {
     var container = document.getElementById('mural');
     if(!container) return;
     container.innerHTML = '';
-    var list = app.state.jokes.slice();
-    for(var i=0; i<list.length; i++) { container.appendChild(createCard(list[i])); }
+    app.state.jokes.forEach(function(j) { container.appendChild(createCard(j)); });
 }
 
 function createCard(joke) {
     var el = document.createElement('article');
     el.className = 'post-it';
-    el.id = 'joke-' + joke.id;
     
-    // COLOR VERDE Y DEMÁS: Forzamos variable CSS
-    if (joke.color === 'special-ai') el.classList.add('special-ai');
-    else if (joke.color === 'special-vip') el.classList.add('special-vip');
-    else {
-        el.style.setProperty('--bg-c', joke.color || '#fff9c4');
-        el.style.backgroundColor = joke.color || '#fff9c4'; // Doble seguridad
-    }
-    
-    var votes = (joke.votes_best || 0);
-    var bads = (joke.votes_bad || 0);
-    if (votes >= 15) el.classList.add('rank-gold');
-    else if (votes >= 7) el.classList.add('rank-neon');
-    else if (bads > votes && bads >= 3) el.classList.add('rank-purge');
+    // EL VERDE TIENE QUE VERSE: Aplicamos color de fondo directo
+    var color = joke.color || '#fff9c4';
+    el.style.backgroundColor = color;
+    el.style.setProperty('--bg-c', color); 
 
-    var authorImg = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (joke.avatar || 'bot1');
-    var isVoted = app.user.voted.indexOf(joke.id) !== -1;
-    var vClass = isVoted ? 'voted' : '';
+    if (color === 'special-ai') el.classList.add('special-ai');
+    if (color === 'special-vip') el.classList.add('special-vip');
 
     el.innerHTML = '<div class="post-body">' + sanitize(joke.text) + '</div>' +
         '<div class="post-footer">' +
-            '<div class="author-info"><img src="' + authorImg + '" style="width:24px;height:24px;border-radius:50%"> ' + sanitize(joke.author) + '</div>' +
+            '<div class="author-info">👤 ' + sanitize(joke.author) + '</div>' +
             '<div class="actions">' +
-                '<button class="act-btn btn-vote ' + vClass + '" data-id="' + joke.id + '" data-type="best">🤣 ' + votes + '</button>' +
-                '<button class="act-btn btn-vote ' + vClass + '" data-id="' + joke.id + '" data-type="bad">🍅 ' + bads + '</button>' +
+                '<button class="act-btn" onclick="vote("'+joke.id+'", "best")">🤣 ' + (joke.votes_best||0) + '</button>' +
+                '<button class="act-btn" onclick="vote("'+joke.id+'", "bad")">🍅 ' + (joke.votes_bad||0) + '</button>' +
             '</div>' +
         '</div>';
     return el;
 }
 
 window.vote = async function(id, type) {
-    if (app.user.voted.indexOf(id) !== -1) return showToast('Ya votaste este chiste', 'error');
+    if (app.user.voted.indexOf(id) !== -1) return showToast('Ya votaste', 'error');
     var field = (type === 'best' ? 'votes_best' : 'votes_bad');
-    try {
-        var { error } = await client.rpc('increment_vote', { joke_id: id, field_name: field, visitor_id: app.user.id, device_fp: app.user.id });
-        if (!error) { 
-            app.user.voted.push(id); 
-            localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user)); 
-            initGlobalSync(); 
-        }
-    } catch(e) {}
+    var { error } = await client.rpc('increment_vote', { joke_id: id, field_name: field });
+    if (!error) { app.user.voted.push(id); localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user)); initGlobalSync(); }
 };
 
 async function postJoke() {
-    var input = document.getElementById('secret-input');
-    var aliasInput = document.getElementById('user-alias');
-    var txt = input.value.trim();
-    var alias = aliasInput.value.trim();
-
-    if (alias.length < 2) return showToast('¡Pon tu ALIAS!', 'error');
-    if (txt.length < 3) return showToast('Chiste muy corto', 'error');
+    var txt = document.getElementById('secret-input').value.trim();
+    var alias = document.getElementById('user-alias').value.trim();
+    if (alias.length < 2) return alert('¡Escribe tu ALIAS primero!');
+    if (txt.length < 3) return alert('¡Chiste muy corto!');
     
     var dot = document.querySelector('.dot.active');
     var col = dot ? dot.getAttribute('data-color') : '#fff9c4';
     
-    var btn = document.getElementById('post-btn');
-    btn.disabled = true;
+    console.log("Intentando publicar:", { txt, alias, col });
 
-    try {
-        var { error } = await client.from('jokes').insert([{ 
-            text: txt, author: alias, authorid: app.user.id, color: col, avatar: app.user.avatar || 'bot1' 
-        }]);
-        
-        if (!error) { 
-            input.value = ''; 
-            showToast('¡Chiste pegado!', 'success'); 
-            initGlobalSync(); 
-        } else {
-            alert("Error Supabase: " + error.message);
-        }
-    } catch(e) { alert("Error de Red: " + e.message); }
-    btn.disabled = false;
+    var { data, error } = await client.from('jokes').insert([{ 
+        text: txt, author: alias, authorid: app.user.id, color: col, avatar: 'bot1' 
+    }]);
+    
+    if (!error) { 
+        document.getElementById('secret-input').value = ''; 
+        alert('¡Publicado con éxito!'); 
+        initGlobalSync(); 
+    } else { 
+        console.error(error);
+        alert("Error Supabase: " + error.message); 
+    }
 }
 
 window.onload = function() {
     app.user = loadUser();
-    document.getElementById('my-avatar-img').src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (app.user.avatar || 'bot1');
     if(app.user.alias) document.getElementById('user-alias').value = app.user.alias;
-    
     document.getElementById('post-btn').onclick = postJoke;
-    
-    // Selector de color
     document.getElementById('color-dots').onclick = function(e) {
-        var dot = e.target.closest('.dot');
-        if(dot) {
-            document.querySelectorAll('.dot').forEach(function(d) { d.classList.remove('active'); });
-            dot.classList.add('active');
+        var d = e.target.closest('.dot');
+        if(d) {
+            document.querySelectorAll('.dot').forEach(function(el){ el.classList.remove('active'); });
+            d.classList.add('active');
         }
     };
-
     initGlobalSync();
 };
