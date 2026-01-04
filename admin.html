@@ -274,57 +274,38 @@
             });
         }
 
-        // --- PUBLICACIÓN VIP ---
+        // PUBLICACIÓN VIP
         document.getElementById('vip-btn').addEventListener('click', async function() {
             var txt = document.getElementById('vip-text').value.trim();
             if(txt.length < 3) return alert("Escribe algo...");
-            
-            if(!confirm("¿Publicar esto con imagen generada?")) return;
-            
             this.disabled = true;
-            this.innerText = "Generando Arte...";
-
+            this.innerText = "Publicando...";
             try {
-                // Usamos FETCH directo para evitar errores de la librería client
                 const response = await fetch('https://vqdzidtiyqsuxnlaztmf.supabase.co/functions/v1/generate-joke', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': SUPABASE_KEY
-                    },
+                    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
                     body: JSON.stringify({ manual_mode: true, manual_text: txt })
                 });
-
                 const data = await response.json();
-
-                if (response.ok && data.success) {
-                    alert("¡ARTE PUBLICADO CON ÉXITO!");
+                if (data.success) {
+                    alert("¡Publicado!");
                     document.getElementById('vip-text').value = '';
                     loadJokes();
-                } else {
-                    alert("Error del Servidor: " + JSON.stringify(data));
-                }
-            } catch(e) {
-                alert("Error de Conexión: " + e.message);
-            }
+                } else { alert("Error: " + JSON.stringify(data)); }
+            } catch(e) { alert("Error red: " + e.message); }
             this.disabled = false;
-            this.innerText = "🎨 Publicar con Arte";
+            this.innerText = "🎨 Publicar VIP";
         });
 
         window.deleteJoke = async function(id) {
-            if(!confirm("¿Seguro que quieres borrar este chiste?")) return;
-
-            console.log("Intentando borrar ID:", id);
-            
-            // Borrado directo (si desactivaste RLS en SQL esto funcionará sí o sí)
+            if(!confirm("¿Borrar chiste " + id + "?")) return;
+            // IMPORTANTE: id debe ser string para eq() si es UUID o BigInt
             var { error } = await client.from('jokes').delete().eq('id', id);
-            
             if (error) {
-                console.error("Error Supabase:", error);
-                alert("Error al borrar: " + error.message);
+                alert("Error Supabase: " + error.message);
             } else {
-                alert("Chiste borrado.");
-                loadJokes(); 
+                alert("Borrado ok.");
+                loadJokes();
             }
         };
 
