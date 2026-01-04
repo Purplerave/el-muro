@@ -36,6 +36,17 @@
             display: flex; flex-direction: column; justify-content: space-between;
         }
 
+        /* EFECTO CINTA ADHESIVA (TAPE) */
+        .post-it::before {
+            content: ""; position: absolute; top: -10px; left: 50%;
+            transform: translateX(-50%) rotate(-2deg);
+            width: 80px; height: 30px;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(1px);
+            border: 1px solid rgba(0,0,0,0.1);
+            z-index: 5;
+        }
+
         /* EFECTO BENTO */
         .post-it.wide { grid-column: span 2; }
         .post-it.wide .post-body { font-size: 2.2rem; font-weight: 900; }
@@ -189,7 +200,7 @@
             el.style.setProperty('--bg-c', j.color || '#fff9c4');
             el.innerHTML = `<div class="post-body">${j.text}</div>
                 <div class="post-footer">
-                    <div>👤 ${j.author}</div>
+                    <div style="font-family: var(--font-mono); font-size: 0.75rem;">👤 ${j.author}</div>
                     <div class="actions">
                         <button class="act-btn" onclick="vote('${j.id}', 'best')">🤣 ${j.votes_best||0}</button>
                         <button class="act-btn" onclick="vote('${j.id}', 'bad')">🍅 ${j.votes_bad||0}</button>
