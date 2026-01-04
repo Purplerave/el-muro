@@ -1,14 +1,13 @@
 :root {
-    --bg-office: #f4f4f2;
-    --text-dark: #1a1a1a;
-    --accent: #ff9500;
+    --bg-office: #f0f0f0;
+    --accent: #4caf50;
     --font-head: 'Bangers', cursive;
     --font-hand: 'Kalam', cursive;
 }
 
-body { margin: 0; background: var(--bg-office); font-family: 'Inter', sans-serif; padding-bottom: 100px; }
+body { margin: 0; background: var(--bg-office); font-family: 'Inter', sans-serif; padding-bottom: 120px; }
 
-.auto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; padding: 20px; }
+.auto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; }
 
 .post-it { 
     background-color: var(--bg-c, #fff9c4) !important; 
@@ -16,81 +15,43 @@ body { margin: 0; background: var(--bg-office); font-family: 'Inter', sans-serif
     font-family: var(--font-hand); font-size: 1.2rem;
 }
 
-/* --- LA BARRA DEFINITIVA (UNA SOLA LÍNEA) --- */
+/* --- BARRA DE ENTRADA ULTRA-COMPACTA --- */
 #input-bar { 
     position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); 
-    width: 98%; max-width: 1100px; background: #fff !important; 
-    border: 3px solid #000; border-radius: 50px; padding: 5px 15px; 
-    display: flex; align-items: center; gap: 10px; z-index: 9999;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    flex-wrap: nowrap; /* Prohibido saltar de línea */
+    width: 95%; max-width: 1000px; background: #fff !important; 
+    border: 3px solid #000; border-radius: 50px; padding: 8px 15px; 
+    display: flex !important; flex-direction: row !important; align-items: center !important; 
+    gap: 10px; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
-.input-linear-container { display: flex; align-items: center; gap: 10px; width: 100%; flex-wrap: nowrap; }
+.input-linear-container { display: flex; flex-direction: row; align-items: center; gap: 10px; width: 100%; }
 
-.user-badge { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
-.avatar-slot { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #000; background: #eee; overflow: hidden; flex-shrink: 0; }
+.user-badge { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.avatar-slot { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #000; background: #eee; overflow: hidden; cursor: pointer; }
 .avatar-slot img { width: 100%; height: 100%; object-fit: cover; }
-#user-alias { width: 60px; border: none; font-weight: 900; outline: none; font-size: 0.8rem; background: transparent; border-bottom: 1px solid #ccc; }
 
-.color-picker { display: flex; gap: 4px; flex-shrink: 0; }
-.dot { width: 18px; height: 18px; border: 1px solid #000; border-radius: 50%; background: var(--c); cursor: pointer; }
+#user-alias { width: 70px; border: none; font-weight: 900; outline: none; font-size: 0.85rem; background: #f0f0f0; border-radius: 5px; padding: 2px 5px; }
+
+.color-picker { display: flex; gap: 5px; flex-shrink: 0; }
+.dot { width: 20px; height: 20px; border: 1px solid #000; border-radius: 50%; background: var(--c); cursor: pointer; }
 .dot.active { transform: scale(1.2); border-width: 2px; }
 
-/* El recuadro de escritura */
-.input-main { 
-    flex: 1; 
-    background: #f9f9f9; 
-    border: 2px solid #eee; 
-    border-radius: 20px; 
-    padding: 2px 15px; 
-    display: flex; 
-    align-items: center; 
-}
+.input-main { flex: 1; background: #f9f9f9; border: 1px solid #ddd; border-radius: 20px; padding: 5px 15px; margin: 0 5px; }
 #secret-input { width: 100%; border: none; font-family: var(--font-hand); font-size: 1rem; outline: none; background: transparent; }
 
 .send-btn { 
-    background: #000; color: #fff; border: none; 
-    padding: 6px 15px; font-family: var(--font-head); 
-    font-size: 1.1rem; border-radius: 20px; cursor: pointer; flex-shrink: 0;
+    background: #000; color: #fff; border: none; padding: 8px 20px; 
+    font-family: var(--font-head); font-size: 1.1rem; border-radius: 25px; cursor: pointer; flex-shrink: 0;
 }
-.send-btn:hover { background: #00ff00; color: #000; }
 
-/* --- DASHBOARD (ESCONDIDO) --- */
-#dashboard { 
-    position: fixed; 
-    right: -100%; 
-    top: 0; 
-    bottom: 0; 
-    width: 350px; 
-    background: #fff; 
-    border-left: 3px solid #000; 
-    z-index: 5000; 
-    transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-    padding: 20px; 
-    overflow-y: auto; 
-    box-shadow: -10px 0 30px rgba(0,0,0,0.2);
+/* Selector de Avatar (Flotante) */
+#avatar-selector { 
+    position: absolute; bottom: 70px; left: 20px; background: #fff; 
+    border: 3px solid #000; border-radius: 15px; padding: 10px; 
+    display: none; grid-template-columns: repeat(3, 1fr); gap: 10px; z-index: 10000; 
 }
+.av-opt { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 1px solid #eee; }
+
+/* Dashboard escondido */
+#dashboard { position: fixed; right: -100%; top: 0; bottom: 0; width: 350px; background: #fff; border-left: 3px solid #000; z-index: 5000; transition: 0.4s; padding: 20px; overflow-y: auto; }
 #dashboard[aria-hidden="false"] { right: 0; }
-
-#close-dash-btn { 
-    position: absolute; 
-    top: 15px; 
-    right: 15px; 
-    width: 36px; 
-    height: 36px; 
-    background: #000; 
-    color: #fff; 
-    border: none; 
-    border-radius: 50%; 
-    cursor: pointer; 
-    font-weight: 900; 
-}
-
-.dash-section { margin-bottom: 40px; }
-.dash-section h3 { font-family: var(--font-head); font-size: 1.8rem; margin-bottom: 10px; border-bottom: 2px solid #eee; }
-.rank-list { list-style: none; padding: 0; }
-.rank-list li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-weight: bold; }
-
-.post-footer { display: flex; justify-content: space-between; margin-top: 10px; border-top: 1px dashed #000; padding-top: 5px; font-size: 0.8rem; }
-.act-btn { background: #fff; border: 1px solid #000; padding: 2px 6px; cursor: pointer; }

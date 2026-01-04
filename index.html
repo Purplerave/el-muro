@@ -4,82 +4,61 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>EL MURO | Chistes Malos AI</title>
-    <link rel="stylesheet" href="css/style.css?v=38.0">
+    <link rel="stylesheet" href="css/style.css?v=38.3">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Kalam:wght@400;700&family=Inter:wght@400;900&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="toast-container"></div>
-    <header class="main-header">
-        <div class="header-inner">
-            <div class="header-top-row">
-                <h1 id="title-sign"><span class="bot-line">EL MURO</span></h1>
-                <div class="header-controls">
-                    <input type="text" id="search-input" placeholder="🔍 Buscar..." class="search-bar">
-                    <button id="mute-btn" class="icon-btn">🔊</button>
-                </div>
-            </div>
+    <header class="main-header" style="background:#fff; border-bottom:3px solid #000; padding:10px;">
+        <div class="header-inner" style="display:flex; justify-content:space-between; align-items:center; max-width:1200px; margin:0 auto;">
+            <h1 id="title-sign" style="font-family:'Bangers'; color:#ff9500; margin:0;">EL MURO</h1>
             <nav class="filter-bar">
                 <button class="filter-btn active" data-sort="new">NUEVOS</button>
-                <button class="filter-btn" data-sort="best">TOP 🔥</button>
                 <button class="filter-btn btn-trigger-dash" data-sort="controversial">💀 PURGA</button>
             </nav>
         </div>
     </header>
 
-    <div id="main-layout">
-        <main id="mural-wrapper">
-            <div id="mural" class="auto-grid">
-                <!-- Los chistes cargarán aquí -->
-            </div>
-        </main>
-        <aside id="dashboard" aria-hidden="true">
-            <button id="close-dash-btn">✕</button>
-            <div class="dashboard-content">
-                <section class="dash-section danger-zone">
-                    <h3>💀 JUICIO FINAL</h3>
-                    <p class="purge-desc">Los 3 peores chistes se enfrentan a la eliminación total. Solo uno puede salvarse: ¡Vota para <strong>INDULTAR (🛡️)</strong> a tu favorito! El que tenga más escudos sobrevive, los otros dos serán purgados.</p>
-                    <div id="purgatory-status"></div>
-                    <ul id="purgatory-list" class="rank-list"></ul>
-                </section>
-                <section class="dash-section">
-                    <h3>🏆 HALL OF FAME</h3>
-                    <ul id="humorists-list" class="rank-list"></ul>
-                </section>
-            </div>
-        </aside>
-    </div>
+    <div id="mural" class="auto-grid"></div>
+
+    <aside id="dashboard" aria-hidden="true">
+        <button id="close-dash-btn">✕</button>
+        <div class="dashboard-content">
+            <h3>💀 JUICIO FINAL</h3>
+            <div id="purgatory-list"></div>
+        </div>
+    </aside>
 
     <footer id="input-bar">
-        <div id="avatar-selector" style="display:none;">
-            <div class="av-grid">
-                <img class="av-opt" data-seed="bot1" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot1">
-                <img class="av-opt" data-seed="bot2" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot2">
-                <img class="av-opt" data-seed="bot3" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot3">
-                <img class="av-opt" data-seed="bot4" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot4">
-                <img class="av-opt" data-seed="bot5" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot5">
-                <img class="av-opt" data-seed="bot6" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot6">
-            </div>
+        <div id="avatar-selector">
+            <img class="av-opt" data-seed="bot1" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot1">
+            <img class="av-opt" data-seed="bot2" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot2">
+            <img class="av-opt" data-seed="bot3" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot3">
+            <img class="av-opt" data-seed="bot4" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot4">
+            <img class="av-opt" data-seed="bot5" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot5">
+            <img class="av-opt" data-seed="bot6" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot6">
         </div>
         <div class="input-linear-container">
             <div class="user-badge">
-                <div class="avatar-slot" id="avatar-btn"><img id="my-avatar-img" src="" alt="Avatar"></div>
+                <div class="avatar-slot" id="avatar-btn"><img id="my-avatar-img" src=""></div>
                 <input type="text" id="user-alias" placeholder="ALIAS" maxlength="12">
             </div>
             <div class="color-picker" id="color-dots">
                 <button class="dot active" style="--c:#fff9c4" data-color="#fff9c4"></button>
-                <button class="dot" style="--c:#ff5722" data-color="#ff5722"></button>
-                <button class="dot" style="--c:#00ff00" data-color="#00ff00"></button>
-                <button class="dot" style="--c:#2196f3" data-color="#2196f3"></button>
+                <button class="dot" style="--c:#ffab91" data-color="#ffab91"></button>
+                <button class="dot" style="--c:#4caf50" data-color="#4caf50"></button>
+                <button class="dot" style="--c:#81d4fa" data-color="#81d4fa"></button>
             </div>
-            <div class="input-main"><input type="text" id="secret-input" placeholder="¡Pega tu chiste...!" maxlength="300"></div>
+            <div class="input-main">
+                <input type="text" id="secret-input" placeholder="¡Pega tu chiste...!" maxlength="300">
+            </div>
             <button id="post-btn" class="send-btn">PEGAR</button>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <script src="js/script.js?v=38.1"></script>
+    <script src="js/script.js?v=38.3"></script>
 </body>
 </html>

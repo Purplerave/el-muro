@@ -1,5 +1,5 @@
 /**
- * EL MURO V38.1 - COMPACT ONE-LINE UI
+ * EL MURO V38.3 - COMPACT & COMPLETE
  */
 
 var SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -20,16 +20,14 @@ function loadUser() {
 
 function sanitize(s) { 
     if(!s) return "";
-    var d = document.createElement('div'); 
-    d.textContent = s.substring(0, 300); 
-    return d.innerHTML; 
+    var d = document.createElement('div'); d.textContent = s.substring(0, 300); return d.innerHTML; 
 }
 
 async function initGlobalSync() {
     try {
         var { data } = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(50);
         if (data) { app.state.jokes = data; syncWall(); }
-    } catch (e) { console.error(e); }
+    } catch (e) {}
 }
 
 function syncWall() {
@@ -43,14 +41,13 @@ function createCard(joke) {
     var el = document.createElement('article');
     el.className = 'post-it';
     el.style.setProperty('--bg-c', joke.color || '#fff9c4');
-    
     el.innerHTML = '<div class="post-body">' + sanitize(joke.text) + '</div>' +
         '<div class="post-footer">' +
             '<div>👤 ' + sanitize(joke.author) + '</div>' +
             '<div class="actions">' +
-                '<button class="act-btn" onclick="vote("'+joke.id+'", "best")">🤣 ' + (joke.votes_best||0) + '</button>' + 
-                '<button class="act-btn" onclick="vote("'+joke.id+'", "bad")">🍅 ' + (joke.votes_bad||0) + '</button>' + 
-            '</div>' + 
+                '<button class="act-btn" onclick="vote(\''+joke.id+'\', \'best\')">🤣 ' + (joke.votes_best||0) + '</button>' +
+                '<button class="act-btn" onclick="vote(\''+joke.id+'\', \'bad\')">🍅 ' + (joke.votes_bad||0) + '</button>' +
+            '</div>' +
         '</div>';
     return el;
 }
@@ -59,11 +56,7 @@ window.vote = async function(id, type) {
     if (app.user.voted.indexOf(id) !== -1) return;
     var field = (type === 'best' ? 'votes_best' : 'votes_bad');
     var { error } = await client.rpc('increment_vote', { joke_id: id, field_name: field, visitor_id: app.user.id });
-    if (!error) { 
-        app.user.voted.push(id); 
-        localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user)); 
-        initGlobalSync(); 
-    }
+    if (!error) { app.user.voted.push(id); localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user)); initGlobalSync(); }
 };
 
 async function postJoke() {
@@ -71,49 +64,41 @@ async function postJoke() {
     var alias = document.getElementById('user-alias').value.trim();
     if (!alias) return alert("Pon un Alias");
     if (input.value.length < 3) return;
-    
     var dot = document.querySelector('.dot.active');
     var col = dot ? dot.getAttribute('data-color') : '#fff9c4';
-    
-    await client.from('jokes').insert([{ 
-        text: input.value, author: alias, authorid: app.user.id, color: col, ts: new Date().toISOString()
-    }]);
-    
-    input.value = '';
-    initGlobalSync();
+    await client.from('jokes').insert([{ text: input.value, author: alias, authorid: app.user.id, color: col, ts: new Date().toISOString() }]);
+    input.value = ''; initGlobalSync();
 }
 
 window.onload = function() {
     app.user = loadUser();
-    // CORRECCIÓN AVATAR: Cargar la imagen del usuario
     document.getElementById('my-avatar-img').src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (app.user.avatar || 'bot1');
     if(app.user.alias) document.getElementById('user-alias').value = app.user.alias;
     
     document.getElementById('post-btn').onclick = postJoke;
     
+    // Avatar Click
+    document.getElementById('avatar-btn').onclick = function() {
+        var s = document.getElementById('avatar-selector');
+        s.style.display = (s.style.display === 'grid' ? 'none' : 'grid');
+    };
+
+    document.querySelectorAll('.av-opt').forEach(function(opt) {
+        opt.onclick = function() {
+            var seed = this.dataset.seed;
+            app.user.avatar = seed;
+            document.getElementById('my-avatar-img').src = this.src;
+            localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user));
+            document.getElementById('avatar-selector').style.display = 'none';
+        }
+    });
+
     document.getElementById('color-dots').onclick = function(e) {
         var d = e.target.closest('.dot');
         if(d) {
             document.querySelectorAll('.dot').forEach(function(el){ el.classList.remove('active'); });
             d.classList.add('active');
         }
-    };
-    // Filtros
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.onclick = function() {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Si es el botón de Purga, abrimos el panel lateral
-            if (this.dataset.sort === 'controversial') {
-                document.getElementById('dashboard').setAttribute('aria-hidden', 'false');
-            }
-        }
-    });
-
-    // Cerrar Dashboard
-    document.getElementById('close-dash-btn').onclick = function() {
-        document.getElementById('dashboard').setAttribute('aria-hidden', 'true');
     };
 
     initGlobalSync();
