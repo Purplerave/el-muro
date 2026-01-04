@@ -265,7 +265,7 @@
                 
                 var actionsCell = `
                     <td>
-                        <button class="btn-delete" onclick="deleteJoke(${joke.id})">BORRAR</button>
+                        <button class="btn-delete" onclick="deleteJoke('${joke.id}')">BORRAR</button>
                     </td>
                 `;
 
@@ -298,7 +298,7 @@
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    alert("¡RESPUESTA DEL SERVIDOR!: " + data.msg);
+                    alert("¡ARTE PUBLICADO CON ÉXITO!");
                     document.getElementById('vip-text').value = '';
                     loadJokes();
                 } else {
@@ -312,25 +312,19 @@
         });
 
         window.deleteJoke = async function(id) {
-            if(!confirm("¿Seguro que quieres borrar este chiste? Esta acción es irreversible.")) return;
+            if(!confirm("¿Seguro que quieres borrar este chiste?")) return;
 
             console.log("Intentando borrar ID:", id);
-            var session = await client.auth.getSession();
-            console.log("Estado sesión actual:", session);
-
-            if (!session.data.session) {
-                alert("Error: No parece haber una sesión activa. Intenta recargar y loguearte de nuevo.");
-                return;
-            }
-
+            
+            // Borrado directo (si desactivaste RLS en SQL esto funcionará sí o sí)
             var { error } = await client.from('jokes').delete().eq('id', id);
             
             if (error) {
                 console.error("Error Supabase:", error);
-                alert("Error al borrar: " + error.message + " | Code: " + error.code + " | Details: " + error.details);
+                alert("Error al borrar: " + error.message);
             } else {
-                console.log("Borrado con éxito");
-                loadJokes(); // Recargar lista
+                alert("Chiste borrado.");
+                loadJokes(); 
             }
         };
 
