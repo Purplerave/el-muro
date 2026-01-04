@@ -3,20 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>EL MURO | Chistes Malos AI</title>
-    <link rel="stylesheet" href="css/style.css?v=39.1">
+    <title>EL MURO | Neo-Brutalismo 2026</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Kalam:wght@400;700&family=Inter:wght@400;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Kalam:wght@400;700&family=Inter:wght@400;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-tech: #e0e0e0;
+            --card-yellow: #fff9c4;
+            --neo-border: 4px solid #000;
+            --neo-shadow: 8px 8px 0px #000;
+            --font-head: 'Bangers', cursive;
+            --font-hand: 'Kalam', cursive;
+            --font-mono: 'Space Mono', monospace;
+        }
+
+        body { 
+            margin: 0; background-color: var(--bg-tech);
+            background-image: radial-gradient(#bcbcbc 1px, transparent 1px);
+            background-size: 20px 20px; font-family: 'Inter', sans-serif;
+            padding-bottom: 120px;
+        }
+
+        .auto-grid { 
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 30px; padding: 30px; max-width: 1400px; margin: 0 auto;
+        }
+
+        .post-it { 
+            background-color: var(--bg-c, var(--card-yellow)); padding: 25px; 
+            border: var(--neo-border); box-shadow: var(--neo-shadow);
+            transition: 0.2s; position: relative; min-height: 150px;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+
+        .post-body { font-family: var(--font-hand); font-size: 1.4rem; line-height: 1.2; color: #000; margin-bottom: 20px; }
+
+        .post-footer { 
+            display: flex; justify-content: space-between; align-items: center; 
+            border-top: 3px solid #000; padding-top: 15px; font-weight: 900; 
+            font-size: 0.85rem; text-transform: uppercase;
+        }
+
+        .act-btn { 
+            background: #fff; border: 2px solid #000; padding: 5px 12px; 
+            cursor: pointer; font-weight: 900; box-shadow: 3px 3px 0px #000;
+        }
+
+        /* --- BARRA DE ENTRADA --- */
+        #input-bar { 
+            position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); 
+            width: 95%; max-width: 1100px; background: #fff !important; 
+            border: var(--neo-border); box-shadow: var(--neo-shadow);
+            padding: 10px 20px; display: flex; align-items: center; gap: 15px; z-index: 9999;
+        }
+
+        .avatar-slot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000; overflow: hidden; cursor: pointer; flex-shrink: 0; }
+        .avatar-slot img { width: 100%; height: 100%; object-fit: cover; }
+        #user-alias { width: 80px; border: none; font-weight: 900; outline: none; border-bottom: 2px solid #000; background: transparent; }
+        .color-picker { display: flex; gap: 6px; }
+        .dot { width: 20px; height: 20px; border: 2px solid #000; border-radius: 50%; background: var(--c); cursor: pointer; }
+        .dot.active { transform: scale(1.3); }
+        .input-main { flex: 1; border-bottom: 3px solid #000; }
+        #secret-input { width: 100%; border: none; font-family: var(--font-hand); font-size: 1.2rem; outline: none; background: transparent; }
+        .send-btn { background: #000; color: #fff; border: none; padding: 10px 25px; font-family: var(--font-head); font-size: 1.4rem; cursor: pointer; box-shadow: 4px 4px 0px #ff9500; }
+
+        /* --- DASHBOARD NEO-BRUTALISTA (OCULTO) --- */
+        #dashboard { 
+            position: fixed; right: -100%; top: 0; bottom: 0; width: 380px; 
+            background: #fff; border-left: var(--neo-border); z-index: 10000; 
+            transition: 0.5s; padding: 30px; overflow-y: auto;
+        }
+        #dashboard[aria-hidden="false"] { right: 0; }
+
+        /* --- ANIMACIONES --- */
+        .shake { animation: neo-shake 0.3s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes neo-shake { 0%, 100% { transform: translate(0,0); } 25% { transform: translate(-5px, 5px); } 75% { transform: translate(5px, -5px); } }
+        .tomato-splat { position: absolute; width: 60px; height: 60px; background: #ff1744; border-radius: 50%; filter: blur(5px); opacity: 0.8; pointer-events: none; transform: scale(0); animation: splat-grow 0.4s forwards; }
+        @keyframes splat-grow { to { transform: scale(2.5); opacity: 0; } }
+        .confetti { position: absolute; width: 10px; height: 10px; border: 1px solid #000; pointer-events: none; animation: confetti-fall 0.8s forwards; }
+        @keyframes confetti-fall { 0% { transform: translate(0,0); opacity: 1; } 100% { transform: translate(var(--x), var(--y)) rotate(360deg); opacity: 0; } }
+    </style>
 </head>
 <body>
     <div id="toast-container"></div>
-    <header class="main-header" style="background:#fff; border-bottom:3px solid #000; padding:10px;">
-        <div class="header-inner" style="display:flex; justify-content:space-between; align-items:center; max-width:1200px; margin:0 auto;">
-            <h1 id="title-sign" style="font-family:'Bangers'; color:#ff9500; margin:0;">EL MURO</h1>
-            <nav class="filter-bar">
-                <button class="filter-btn active" data-sort="new">NUEVOS</button>
-                <button class="filter-btn btn-trigger-dash" data-sort="controversial">💀 PURGA</button>
+    <header style="background:#fff; border-bottom:4px solid #000; padding:15px; position: sticky; top:0; z-index:1000;">
+        <div style="display:flex; justify-content:space-between; align-items:center; max-width:1200px; margin:0 auto;">
+            <h1 style="font-family:'Bangers'; font-size:2.5rem; margin:0; color:#ff9500; -webkit-text-stroke:1.5px #000;">EL MURO</h1>
+            <nav>
+                <button class="act-btn" onclick="app.state.sort='best';syncWall();">TOP 🔥</button>
+                <button class="act-btn" onclick="document.getElementById('dashboard').setAttribute('aria-hidden', 'false')">💀 PURGA</button>
             </nav>
         </div>
     </header>
@@ -24,41 +100,110 @@
     <div id="mural" class="auto-grid"></div>
 
     <aside id="dashboard" aria-hidden="true">
-        <button id="close-dash-btn">✕</button>
-        <div class="dashboard-content">
-            <h3>💀 JUICIO FINAL</h3>
-            <div id="purgatory-list"></div>
-        </div>
+        <button onclick="document.getElementById('dashboard').setAttribute('aria-hidden', 'true')" style="position:absolute; top:20px; right:20px; background:#000; color:#fff; border:none; padding:10px; cursor:pointer;">✕</button>
+        <h3 style="font-family:'Bangers'; font-size:2rem; color:#ff1744; border-bottom:4px solid #000;">💀 JUICIO FINAL</h3>
+        <div id="purgatory-list"></div>
     </aside>
 
     <footer id="input-bar">
-        <div id="avatar-selector">
-            <img class="av-opt" data-seed="bot1" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot1">
-            <img class="av-opt" data-seed="bot2" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot2">
-            <img class="av-opt" data-seed="bot3" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot3">
-            <img class="av-opt" data-seed="bot4" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot4">
-            <img class="av-opt" data-seed="bot5" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot5">
-            <img class="av-opt" data-seed="bot6" src="https://api.dicebear.com/7.x/bottts/svg?seed=bot6">
+        <div class="user-badge">
+            <div class="avatar-slot"><img id="my-avatar-img" src=""></div>
+            <input type="text" id="user-alias" placeholder="ALIAS">
         </div>
-        <div class="input-linear-container">
-            <div class="user-badge">
-                <div class="avatar-slot" id="avatar-btn"><img id="my-avatar-img" src=""></div>
-                <input type="text" id="user-alias" placeholder="ALIAS" maxlength="12">
-            </div>
-            <div class="color-picker" id="color-dots">
-                <button class="dot active" style="--c:#fff9c4" data-color="#fff9c4"></button>
-                <button class="dot" style="--c:#ffab91" data-color="#ffab91"></button>
-                <button class="dot" style="--c:#4caf50" data-color="#4caf50"></button>
-                <button class="dot" style="--c:#81d4fa" data-color="#81d4fa"></button>
-            </div>
-            <div class="input-main">
-                <input type="text" id="secret-input" placeholder="¡Pega tu chiste...!" maxlength="300">
-            </div>
-            <button id="post-btn" class="send-btn">PEGAR</button>
+        <div class="color-picker" id="color-dots">
+            <button class="dot active" style="--c:#fff9c4" data-color="#fff9c4"></button>
+            <button class="dot" style="--c:#ff8a80" data-color="#ff8a80"></button>
+            <button class="dot" style="--c:#81c784" data-color="#81c784"></button>
+            <button class="dot" style="--c:#81d4fa" data-color="#81d4fa"></button>
         </div>
+        <div class="input-main"><input type="text" id="secret-input" placeholder="¡Pega tu chiste...!" maxlength="300"></div>
+        <button id="post-btn" class="send-btn">PEGAR</button>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/script.js?v=38.3"></script>
+    <script>
+        var SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
+        var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZHppZHRpeXFzdXhubGF6dG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyODIxNTIsImV4cCI6MjA4Mjg1ODE1Mn0.ZmDwXQ_5Rg6mTBM8JS4eDYQoBvH9ceQmHL-ELKqdWVA';
+        var client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        var app = { state: { jokes: [], sort: 'new' }, user: null };
+
+        function loadUser() {
+            var u; try { u = JSON.parse(localStorage.getItem('elMuro_v6_usr')); } catch(e) { u = null; }
+            if (!u || !u.id) { u = { id: crypto.randomUUID(), voted: [], alias: '', avatar: 'bot1' }; localStorage.setItem('elMuro_v6_usr', JSON.stringify(u)); }
+            return u;
+        }
+
+        async function initGlobalSync() {
+            var { data } = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(100);
+            if (data) { app.state.jokes = data; syncWall(); updateDashboard(); }
+        }
+
+        function syncWall() {
+            var container = document.getElementById('mural'); if(!container) return; container.innerHTML = '';
+            var list = app.state.jokes.slice();
+            if (app.state.sort === 'best') list.sort((a,b) => (b.votes_best||0) - (a.votes_best||0));
+            list.forEach(j => container.appendChild(createCard(j)));
+        }
+
+        function createCard(j) {
+            var el = document.createElement('article'); el.className = 'post-it'; el.id = 'joke-' + j.id;
+            el.style.setProperty('--bg-c', j.color || '#fff9c4');
+            el.innerHTML = `<div class="post-body">${j.text}</div>
+                <div class="post-footer">
+                    <div>👤 ${j.author}</div>
+                    <div class="actions">
+                        <button class="act-btn" onclick="vote('${j.id}', 'best')">🤣 ${j.votes_best||0}</button>
+                        <button class="act-btn" onclick="vote('${j.id}', 'bad')">🍅 ${j.votes_bad||0}</button>
+                    </div>
+                </div>`;
+            return el;
+        }
+
+        window.vote = async function(id, type) {
+            var card = document.getElementById('joke-' + id);
+            if (type === 'bad') { card.classList.add('shake'); createSplat(card); setTimeout(() => card.classList.remove('shake'), 400); }
+            else { createConfetti(card); }
+
+            var field = (type === 'best' ? 'votes_best' : 'votes_bad');
+            var { error } = await client.rpc('increment_vote', { joke_id: id, field_name: field, visitor_id: app.user.id });
+            if (!error) initGlobalSync();
+        };
+
+        function createSplat(card) {
+            var s = document.createElement('div'); s.className = 'tomato-splat'; s.style.left = '50%'; s.style.top = '50%';
+            card.appendChild(s); setTimeout(() => s.remove(), 500);
+        }
+
+        function createConfetti(card) {
+            for (var i = 0; i < 10; i++) {
+                var c = document.createElement('div'); c.className = 'confetti'; c.style.left = '50%'; c.style.top = '50%';
+                c.style.setProperty('--x', (Math.random() * 200 - 100) + 'px'); c.style.setProperty('--y', (Math.random() * -200 - 50) + 'px');
+                c.style.backgroundColor = ['#81c784', '#ffeb3b', '#2196f3'][Math.floor(Math.random()*3)];
+                card.appendChild(c); setTimeout(() => c.remove(), 800);
+            }
+        }
+
+        function updateDashboard() {
+            var worst = app.state.jokes.filter(j => (j.votes_bad||0) > (j.votes_best||0)).sort((a,b) => (b.votes_bad||0)-(a.votes_bad||0)).slice(0,3);
+            document.getElementById('purgatory-list').innerHTML = worst.map(j => `<div style="border:3px solid #000; padding:10px; margin-top:10px; box-shadow:4px 4px 0 #000;"><strong>${j.author}</strong>: ${j.text.substring(0,40)}...<br><span>🍅 ${j.votes_bad}</span></div>`).join('') || '<p>LIMPIO</p>';
+        }
+
+        window.onload = function() {
+            app.user = loadUser();
+            document.getElementById('my-avatar-img').src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (app.user.avatar || 'bot1');
+            if(app.user.alias) document.getElementById('user-alias').value = app.user.alias;
+            document.getElementById('post-btn').onclick = async function() {
+                var txt = document.getElementById('secret-input').value;
+                var al = document.getElementById('user-alias').value;
+                var col = document.querySelector('.dot.active').getAttribute('data-color');
+                await client.from('jokes').insert([{ text: txt, author: al, authorid: app.user.id, color: col, ts: new Date().toISOString() }]);
+                document.getElementById('secret-input').value = ''; initGlobalSync();
+            };
+            document.getElementById('color-dots').onclick = function(e) {
+                var d = e.target.closest('.dot'); if(d) { document.querySelectorAll('.dot').forEach(el => el.classList.remove('active')); d.classList.add('active'); }
+            };
+            initGlobalSync();
+        };
+    </script>
 </body>
 </html>
