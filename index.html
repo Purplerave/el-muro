@@ -26,22 +26,22 @@
         }
 
         .auto-grid { 
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
-            gap: 30px; padding: 30px; max-width: 1400px; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* Bajado de 300px a 220px */
+            gap: 15px; padding: 20px; max-width: 1400px; margin: 0 auto; /* Gap de 30 a 15 */
         }
 
         .post-it { 
-            background-color: var(--bg-c, var(--card-yellow)); padding: 25px; 
-            border: var(--neo-border); box-shadow: var(--neo-shadow);
-            transition: 0.2s; position: relative; min-height: 150px;
+            background-color: var(--bg-c, var(--card-yellow)); padding: 15px; /* Padding de 25 a 15 */
+            border: 3px solid #000; box-shadow: 5px 5px 0px #000; /* Sombra y borde reducidos ligeramente */
+            transition: 0.2s; position: relative; min-height: 120px; /* Altura mínima reducida */
             display: flex; flex-direction: column; justify-content: space-between;
         }
 
         /* TAPE EFFECT */
         .post-it::before {
-            content: ""; position: absolute; top: -10px; left: 50%;
+            content: ""; position: absolute; top: -8px; left: 50%;
             transform: translateX(-50%) rotate(-2deg);
-            width: 80px; height: 30px;
+            width: 60px; height: 20px; /* Cinta más pequeña */
             background: rgba(255, 255, 255, 0.4);
             backdrop-filter: blur(1px); border: 1px solid rgba(0,0,0,0.1); z-index: 5;
         }
@@ -49,40 +49,40 @@
         /* ESPECIAL IA (ROBOT SOFT) */
         .post-it.special-ai {
             background: #eceff1 !important; /* Gris azulado muy suave */
-            border: 4px solid #546e7a !important; /* Borde gris acero */
-            box-shadow: var(--neo-shadow); /* Sombra estándar */
+            border: 3px solid #546e7a !important; 
+            box-shadow: 5px 5px 0px #000; 
         }
         .post-it.special-ai::after {
             content: "🤖 IA";
-            position: absolute; top: -15px; right: -10px;
+            position: absolute; top: -10px; right: -5px;
             background: #546e7a; color: #fff;
-            padding: 2px 8px; font-size: 0.7rem; font-weight: bold;
+            padding: 1px 6px; font-size: 0.6rem; font-weight: bold;
             transform: rotate(5deg); border: 2px solid #000;
         }
         .post-it.special-ai .post-body { 
             font-family: var(--font-mono); 
             color: #263238 !important; 
-            font-size: 1.3rem; 
+            font-size: 1rem; 
         }
         .post-it.special-ai .post-footer { border-top-color: #546e7a; color: #546e7a; }
         .post-it.special-ai .act-btn { background: #fff; color: #000; border-color: #000; }
 
         /* BENTO EFFECT */
         .post-it.wide { grid-column: span 2; }
-        .post-it.wide .post-body { font-size: 2.2rem; font-weight: 900; }
+        .post-it.wide .post-body { font-size: 1.4rem; font-weight: 900; }
         @media (max-width: 768px) { .post-it.wide { grid-column: span 1; } }
 
-        .post-body { font-family: var(--font-hand); font-size: 1.4rem; line-height: 1.2; color: #000; margin-bottom: 20px; }
+        .post-body { font-family: var(--font-hand); font-size: 1.15rem; line-height: 1.2; color: #000; margin-bottom: 15px; } /* Fuente bajada de 1.4 a 1.15 */
 
         .post-footer { 
             display: flex; justify-content: space-between; align-items: center; 
-            border-top: 3px solid #000; padding-top: 15px; font-weight: 900; 
-            font-size: 0.85rem; text-transform: uppercase;
+            border-top: 2px solid #000; padding-top: 10px; font-weight: 900; 
+            font-size: 0.75rem; text-transform: uppercase;
         }
 
         .act-btn { 
-            background: #fff; border: 2px solid #000; padding: 5px 12px; 
-            cursor: pointer; font-weight: 900; box-shadow: 3px 3px 0px #000;
+            background: #fff; border: 2px solid #000; padding: 3px 8px; 
+            cursor: pointer; font-weight: 900; box-shadow: 2px 2px 0px #000; font-size: 0.8rem;
         }
 
         /* BARRA ENTRADA */
