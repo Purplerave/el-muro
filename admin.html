@@ -306,10 +306,17 @@
             this.innerText = "IA Pensando...";
 
             try {
+                // Añadimos un timestamp aleatorio para evitar caché y repetición
+                const randomTrigger = Date.now() + Math.random().toString();
+                
                 const response = await fetch('https://vqdzidtiyqsuxnlaztmf.supabase.co/functions/v1/generate-joke', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
-                    body: JSON.stringify({ manual_mode: false }) // Modo automático
+                    body: JSON.stringify({ 
+                        manual_mode: false, 
+                        trigger_id: randomTrigger,
+                        force_random: true
+                    }) 
                 });
 
                 if (response.ok) {
