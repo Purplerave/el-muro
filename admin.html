@@ -303,10 +303,17 @@
             if(!confirm("¿Quieres que la IA publique un chiste ahora?")) return;
             
             this.disabled = true;
-            this.innerText = "IA Pensando...";
+            this.innerText = "IA Leyendo el muro...";
+
+            // Recopilar contexto del muro actual para que no desvaríe
+            var currentJokes = [];
+            document.querySelectorAll('#jokes-list tr td:nth-child(2)').forEach(td => {
+                currentJokes.push(td.innerText.substring(0, 50));
+            });
+            var contextMemory = currentJokes.slice(0, 5).join(" | "); // Le damos los 5 últimos
 
             try {
-                // Añadimos un timestamp aleatorio para evitar caché y repetición
+                // Añadimos un timestamp aleatorio y MEMORIA
                 const randomTrigger = Date.now() + Math.random().toString();
                 
                 const response = await fetch('https://vqdzidtiyqsuxnlaztmf.supabase.co/functions/v1/generate-joke', {
@@ -315,7 +322,7 @@
                     body: JSON.stringify({ 
                         manual_mode: false, 
                         trigger_id: randomTrigger,
-                        force_random: true
+                        memory: contextMemory // ¡Aquí está la clave!
                     }) 
                 });
 
