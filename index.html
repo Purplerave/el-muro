@@ -197,7 +197,7 @@
 
         async function initGlobalSync() {
             var { data } = await client.from('jokes').select('*').order('ts', { ascending: false }).limit(100);
-            if (data) { app.state.jokes = data; syncWall(); updateDashboard(); checkDailyAIJoke(); }
+            if (data) { app.state.jokes = data; syncWall(); updateDashboard(); /* checkDailyAIJoke(); -> PAUSADO POR DUPLICADOS */ }
         }
 
         async function checkDailyAIJoke() {
