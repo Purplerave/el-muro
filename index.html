@@ -119,16 +119,17 @@
 
         /* DASHBOARD - FIXED POSITION FORCED */
         #dashboard { 
-            position: fixed !important; right: -100% !important; top: 0; bottom: 0; width: 320px; /* Un poco más estrecho para móviles */
+            position: fixed !important; right: -100% !important; top: 0; bottom: 0; width: 320px;
             background: #1a1a1a !important; border-left: var(--neo-border); z-index: 10000; 
             transition: 0.5s; padding: 20px; overflow-y: auto; color: #fff;
             box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+            display: none; /* TOTALMENTE INEXISTENTE AL INICIO */
             background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
             background-size: 100% 4px, 3px 100%;
         }
-        #dashboard[aria-hidden="false"] { right: 0 !important; }
+        #dashboard.active { display: block; right: 0 !important; } /* Solo existe cuando tiene la clase active */
         @media (max-width: 480px) {
-            #dashboard { width: 100%; right: -100% !important; border-left: none; }
+            #dashboard.active { width: 100%; right: 0 !important; border-left: none; }
         }
 
         .threat-level { 
@@ -155,15 +156,15 @@
             <h1 style="font-family:'Bangers'; font-size:2.5rem; margin:0; color:#ff9500; -webkit-text-stroke:1.5px #000;">EL MURO</h1>
             <nav>
                 <button class="act-btn" onclick="app.state.sort='best';syncWall();">TOP 🔥</button>
-                <button class="act-btn" onclick="document.getElementById('dashboard').setAttribute('aria-hidden', 'false')">💀 PURGA</button>
+                <button class="act-btn" onclick="document.getElementById('dashboard').classList.add('active')">💀 PURGA</button>
             </nav>
         </div>
     </header>
 
     <div id="mural" class="auto-grid"></div>
 
-    <aside id="dashboard" aria-hidden="true">
-        <button onclick="document.getElementById('dashboard').setAttribute('aria-hidden', 'true')" style="position:absolute; top:20px; right:20px; background:#000; color:#fff; border:none; padding:10px; cursor:pointer;">✕</button>
+    <aside id="dashboard">
+        <button onclick="document.getElementById('dashboard').classList.remove('active')" style="position:absolute; top:20px; right:20px; background:#000; color:#fff; border:none; padding:10px; cursor:pointer;">✕</button>
         <h3 style="font-family:'Bangers'; font-size:2rem; color:#ff1744; border-bottom:4px solid #000;">💀 JUICIO FINAL</h3>
         <div id="purgatory-list"></div>
     </aside>
