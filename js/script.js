@@ -46,7 +46,8 @@ function createCard(joke) {
     
     var isLong = (joke.text || "").length > 100;
     var isPopular = (joke.votes_best || 0) > 10;
-    if (isLong || isPopular) el.classList.add('wide');
+    var isAI = (joke.authorid === '00000000-0000-0000-0000-000000000000');
+    if ((isLong || isPopular) && !isAI) el.classList.add('wide');
 
     var v_best = joke.votes_best || 0;
     var v_bad = joke.votes_bad || 0;

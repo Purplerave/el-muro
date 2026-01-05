@@ -48,9 +48,11 @@
 
         /* ESPECIAL IA (ROBOT SOFT) */
         .post-it.special-ai {
-            background: #eceff1 !important; /* Gris azulado muy suave */
+            background: #eceff1 !important; 
             border: 3px solid #546e7a !important; 
             box-shadow: 5px 5px 0px #000; 
+            transform: scale(1.05) rotate(1deg) !important; /* Un pelín más grande y rotada */
+            z-index: 10;
         }
         .post-it.special-ai::after {
             content: "🤖 IA";
@@ -221,8 +223,8 @@
             var rot = (Math.random() * 4 - 2).toFixed(1); el.style.transform = `rotate(${rot}deg)`;
             var isLong = (j.text || "").length > 100;
             var isPopular = (j.votes_best || 0) > 10;
-            // var isAI = (j.authorid === '00000000-0000-0000-0000-000000000000'); // Eliminado giant mode para IA
-            if (isLong || isPopular) el.classList.add('wide');
+            var isAI = (j.authorid === '00000000-0000-0000-0000-000000000000');
+            if ((isLong || isPopular) && !isAI) el.classList.add('wide'); // IA nunca es wide
             el.style.setProperty('--bg-c', j.color || '#fff9c4');
             el.innerHTML = `<div class="post-body">${j.text}</div>
                 <div class="post-footer">
