@@ -239,18 +239,65 @@
 
         window.vote = async function(id, type) {
             var card = document.getElementById('joke-' + id);
-            if (type === 'bad') { card.classList.add('shake'); createSplat(card); setTimeout(() => card.classList.remove('shake'), 400); }
-            else { createConfetti(card); }
-            var { error } = await client.rpc('increment_vote', { p_joke_id: String(id), p_field_name: (type === 'best' ? 'votes_best' : 'votes_bad'), p_voter_id: app.user.id });
-            if (error) { if (error.message.includes('VOTO_DUPLICADO')) alert("¡YA HAS JUZGADO ESTE CHISTE!"); } else { initGlobalSync(); }
-        };
+            // Animaciones
+            if (type === 'bad') { 
+                if(card) { card.classList.add('shake'); createSplat(card); setTimeout(() => card.classList.remove('shake'), 400); }
+            } else if (type === 'best' || type === 'save') { 
+                if(card) createConfetti(card); 
+            }
 
-        function createSplat(card) { var s = document.createElement('div'); s.className = 'tomato-splat'; s.style.left = '50%'; s.style.top = '50%'; card.appendChild(s); setTimeout(() => s.remove(), 500); }
-        function createConfetti(card) { for (var i = 0; i < 10; i++) { var c = document.createElement('div'); c.className = 'confetti'; c.style.left = '50%'; c.style.top = '50%'; c.style.setProperty('--x', (Math.random() * 200 - 100) + 'px'); c.style.setProperty('--y', (Math.random() * -200 - 50) + 'px'); c.style.backgroundColor = ['#81c784', '#ffeb3b', '#2196f3'][Math.floor(Math.random()*3)]; card.appendChild(c); setTimeout(() => c.remove(), 800); } }
+            // Determinar campo DB
+            var field = 'votes_bad';
+            if (type === 'best' || type === 'save') field = 'votes_best';
+
+            var { error } = await client.rpc('increment_vote', { p_joke_id: String(id), p_field_name: field, p_voter_id: app.user.id });
+            
+            if (error) { 
+                if (error.message.includes('VOTO_DUPLICADO')) {
+                    if (type === 'save') alert("⚠️ El sistema judicial es estricto: Ya has interactuado con este recluso y no puedes cambiar tu sentencia.");
+                    else alert("¡YA HAS JUZGADO ESTE CHISTE!"); 
+                }
+            } else { 
+                if (type === 'save') alert("🛡️ INDULTO REGISTRADO. Has intentado salvar este alma.");
+                initGlobalSync(); 
+            }
+        };
 
         function updateDashboard() {
             var worst = app.state.jokes.filter(j => (j.votes_bad||0) > (j.votes_best||0)).sort((a,b) => (b.votes_bad||0)-(a.votes_bad||0)).slice(0,3);
-            document.getElementById('purgatory-list').innerHTML = worst.map(j => `<div class="purgatory-item"><div class="threat-level">⚠️ AMENAZA: CRÍTICA</div><div style="font-family:var(--font-mono); font-size:0.8rem;"><strong>${j.author}</strong>: "${j.text.substring(0,50)}..."</div><div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;"><span style="color:#ff1744; font-weight:900;">🍅 ${j.votes_bad}</span><button class="act-btn" onclick="vote('${j.id}', 'save')" style="font-size:0.7rem; background:#fff; color:#000;">🛡️ INDULTAR</button></div></div>`).join('') || '<p style="font-family:var(--font-mono); color:#00ff00;">>>> SISTEMA LIMPIO.</p>';
+            var container = document.getElementById('purgatory-list');
+            
+            // Lógica de Fechas (Purga últimos 3 días)
+            var today = new Date();
+            var lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            var daysLeft = lastDay.getDate() - today.getDate();
+            var isPurgeTime = (daysLeft <= 3);
+
+            var headerHTML = `<div style="padding:15px; background:#222; margin-bottom:20px; border:2px solid #ff1744;">
+                <p style="color:#fff; font-size:0.9rem; margin:0 0 10px 0;">
+                    🚫 <strong>PROTOCOLO DE ELIMINACIÓN</strong><br>
+                    Los 3 chistes con peor reputación serán eliminados a fin de mes.
+                </p>
+                ${isPurgeTime 
+                    ? `<div style="color:#00ff00; font-weight:bold; animation: blink 1s infinite;">🚨 LA PURGA ESTÁ ACTIVA.<br>Tienes 1 voto de indulto.</div>` 
+                    : `<div style="color:#ff9500; font-weight:bold;">⏳ Faltan ${daysLeft} días para el juicio final.</div>`}
+            </div>`;
+
+            var listHTML = worst.map(j => `
+                <div class="purgatory-item">
+                    <div class="threat-level">⚠️ AMENAZA: CRÍTICA</div>
+                    <div style="font-family:var(--font-mono); font-size:0.8rem; margin-bottom:10px;">
+                        <strong>${j.author}</strong>: "${j.text.substring(0,60)}..."
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #333; padding-top:10px;">
+                        <span style="color:#ff1744; font-weight:900;">🍅 ${j.votes_bad} Votos</span>
+                        ${isPurgeTime 
+                            ? `<button class="act-btn" onclick="vote('${j.id}', 'save')" style="font-size:0.7rem; background:#00ff00; color:#000; border-color:#000;">🛡️ SALVAR</button>` 
+                            : `<span style="font-size:0.7rem; color:#666;">🔒 ESPERA...</span>`}
+                    </div>
+                </div>`).join('');
+
+            container.innerHTML = headerHTML + (listHTML || '<p style="font-family:var(--font-mono); color:#00ff00;">>>> SISTEMA LIMPIO.</p>');
         }
 
         window.onload = function() {
