@@ -243,29 +243,40 @@
         }
 
         window.vote = async function(id, type) {
-            if (!app.user) app.user = loadUser(); // Asegurar usuario
-            var card = document.getElementById('joke-' + id);
-            // Animaciones
-            if (type === 'bad') { 
-                if(card) { card.classList.add('shake'); createSplat(card); setTimeout(() => card.classList.remove('shake'), 400); }
-            } else if (type === 'best' || type === 'save') { 
-                if(card) createConfetti(card); 
-            }
-
-            // Determinar campo DB
-            var field = 'votes_bad';
-            if (type === 'best' || type === 'save') field = 'votes_best';
-
-            var { error } = await client.rpc('increment_vote', { p_joke_id: String(id), p_field_name: field, p_voter_id: app.user.id });
-            
-            if (error) { 
-                if (error.message.includes('VOTO_DUPLICADO')) {
-                    if (type === 'save') alert("⚠️ El sistema judicial es estricto: Ya has interactuado con este recluso y no puedes cambiar tu sentencia.");
-                    else alert("¡YA HAS JUZGADO ESTE CHISTE!"); 
+            try {
+                if (!app.user) app.user = loadUser();
+                var card = document.getElementById('joke-' + id);
+                
+                // Animaciones básicas primero
+                if (type === 'bad' && card) { 
+                    card.classList.add('shake'); 
+                    createSplat(card); 
+                    setTimeout(function(){ card.classList.remove('shake'); }, 400); 
+                } else if (card) { 
+                    createConfetti(card); 
                 }
-            } else { 
-                if (type === 'save') alert("🛡️ INDULTO REGISTRADO. Has intentado salvar este alma.");
-                initGlobalSync(); 
+
+                var field = (type === 'best' || type === 'save') ? 'votes_best' : 'votes_bad';
+
+                // Llamada a Supabase
+                var res = await client.rpc('increment_vote', { 
+                    p_joke_id: String(id), 
+                    p_field_name: field, 
+                    p_voter_id: String(app.user.id) 
+                });
+                
+                if (res.error) { 
+                    if (res.error.message.indexOf('VOTO_DUPLICADO') !== -1) {
+                        alert(type === 'save' ? "Ya has juzgado este chiste." : "¡YA HAS VOTADO!"); 
+                    } else {
+                        alert("Error DB: " + res.error.message);
+                    }
+                } else { 
+                    if (type === 'save') alert("🛡️ INDULTO REGISTRADO.");
+                    initGlobalSync(); 
+                }
+            } catch (err) {
+                alert("Error crítico móvil: " + err.message);
             }
         };
 
