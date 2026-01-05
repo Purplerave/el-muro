@@ -280,6 +280,29 @@
             }
         };
 
+        function createSplat(card) { 
+            var s = document.createElement('div'); 
+            s.className = 'tomato-splat'; 
+            s.style.left = '50%'; s.style.top = '50%'; 
+            card.appendChild(s); 
+            setTimeout(function(){ if(s && s.parentNode) s.parentNode.removeChild(s); }, 500); 
+        }
+
+        function createConfetti(card) { 
+            for (var i = 0; i < 10; i++) { 
+                var c = document.createElement('div'); 
+                c.className = 'confetti'; 
+                c.style.left = '50%'; c.style.top = '50%'; 
+                c.style.setProperty('--x', (Math.random() * 200 - 100) + 'px'); 
+                c.style.setProperty('--y', (Math.random() * -200 - 50) + 'px'); 
+                c.style.backgroundColor = ['#81c784', '#ffeb3b', '#2196f3'][Math.floor(Math.random()*3)]; 
+                card.appendChild(c); 
+                (function(el){ 
+                    setTimeout(function(){ if(el && el.parentNode) el.parentNode.removeChild(el); }, 800); 
+                })(c);
+            } 
+        }
+
         function updateDashboard() {
             var worst = app.state.jokes.filter(j => (j.votes_bad||0) > (j.votes_best||0)).sort((a,b) => (b.votes_bad||0)-(a.votes_bad||0)).slice(0,3);
             var container = document.getElementById('purgatory-list');
