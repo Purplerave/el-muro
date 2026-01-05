@@ -23,6 +23,7 @@
             background-image: radial-gradient(#bcbcbc 1px, transparent 1px);
             background-size: 20px 20px; font-family: 'Inter', sans-serif;
             padding-bottom: 120px;
+            overflow-x: hidden; /* Evita el scroll lateral del panel oculto */
         }
 
         .auto-grid { 
@@ -118,15 +119,23 @@
 
         /* DASHBOARD - FIXED POSITION FORCED */
         #dashboard { 
-            position: fixed !important; right: -100% !important; top: 0; bottom: 0; width: 380px; 
+            position: fixed !important; right: -100% !important; top: 0; bottom: 0; width: 320px; /* Un poco más estrecho para móviles */
             background: #1a1a1a !important; border-left: var(--neo-border); z-index: 10000; 
-            transition: 0.5s; padding: 30px; overflow-y: auto; color: #fff;
+            transition: 0.5s; padding: 20px; overflow-y: auto; color: #fff;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.5);
             background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
             background-size: 100% 4px, 3px 100%;
         }
         #dashboard[aria-hidden="false"] { right: 0 !important; }
+        @media (max-width: 480px) {
+            #dashboard { width: 100%; right: -100% !important; border-left: none; }
+        }
 
-        .threat-level { display: inline-block; background: #ff1744; color: #fff; padding: 2px 8px; font-family: var(--font-mono); font-size: 0.7rem; font-weight: 900; margin-bottom: 10px; animation: blink 1s infinite; }
+        .threat-level { 
+            display: inline-block; background: #ff1744; color: #fff; 
+            padding: 2px 8px; font-family: var(--font-mono); font-size: 0.7rem; 
+            font-weight: 900; margin-bottom: 10px; animation: blink 1s infinite; 
+        }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         .purgatory-item { border: 3px solid #fff; padding: 15px; margin-top: 15px; background: rgba(255,255,255,0.05); box-shadow: 6px 6px 0 #ff1744; }
 
