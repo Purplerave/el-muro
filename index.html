@@ -155,6 +155,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; max-width:1200px; margin:0 auto;">
             <h1 style="font-family:'Bangers'; font-size:2.5rem; margin:0; color:#ff9500; -webkit-text-stroke:1.5px #000;">EL MURO</h1>
             <nav>
+                <button class="act-btn" onclick="app.state.sort='new';syncWall();">TODOS</button>
                 <button class="act-btn" onclick="app.state.sort='best';syncWall();">TOP 🔥</button>
                 <button class="act-btn" onclick="document.getElementById('dashboard').classList.add('active')">💀 PURGA</button>
             </nav>
@@ -230,7 +231,12 @@
         function syncWall() {
             var container = document.getElementById('mural'); if(!container) return; container.innerHTML = '';
             var list = app.state.jokes.slice();
-            if (app.state.sort === 'best') list.sort((a,b) => (b.votes_best||0) - (a.votes_best||0));
+            if (app.state.sort === 'best') {
+                list.sort((a,b) => (b.votes_best||0) - (a.votes_best||0));
+            } else {
+                // Orden por fecha (ID o TS descendente)
+                list.sort((a,b) => new Date(b.ts).getTime() - new Date(a.ts).getTime());
+            }
             list.forEach(j => container.appendChild(createCard(j)));
         }
 
