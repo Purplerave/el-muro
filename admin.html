@@ -169,6 +169,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/vault.js"></script>
     <script>
         // CONFIGURACIÓN SUPABASE
         var SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
@@ -298,45 +299,38 @@
             this.innerText = "🚀 Publicar como Admin";
         });
 
-        // FORZAR CHISTE IA
+        // FORZAR CHISTE IA (AHORA DESDE BÓVEDA CAMUFLADA)
         document.getElementById('ai-force-btn').addEventListener('click', async function() {
-            if(!confirm("¿Quieres que la IA publique un chiste ahora?")) return;
+            if(!confirm("¿Quieres inyectar un chiste de la Bóveda ahora?")) return;
             
             this.disabled = true;
-            this.innerText = "IA Leyendo el muro...";
-
-            // Recopilar contexto del muro actual para que no desvaríe
-            var currentJokes = [];
-            document.querySelectorAll('#jokes-list tr td:nth-child(2)').forEach(td => {
-                currentJokes.push(td.innerText.substring(0, 50));
-            });
-            var contextMemory = currentJokes.slice(0, 5).join(" | "); // Le damos los 5 últimos
+            this.innerText = "Inyectando humor...";
 
             try {
-                // Añadimos un timestamp aleatorio y MEMORIA
-                const randomTrigger = Date.now() + Math.random().toString();
-                
-                const response = await fetch('https://vqdzidtiyqsuxnlaztmf.supabase.co/functions/v1/generate-joke', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
-                    body: JSON.stringify({ 
-                        manual_mode: false, 
-                        trigger_id: randomTrigger,
-                        memory: contextMemory // ¡Aquí está la clave!
-                    }) 
-                });
+                const randomJoke = JOKE_VAULT[Math.floor(Math.random() * JOKE_VAULT.length)];
+                const randomAuthor = FAKE_AUTHORS[Math.floor(Math.random() * FAKE_AUTHORS.length)];
+                const randomColor = VIBRANT_COLORS[Math.floor(Math.random() * VIBRANT_COLORS.length)];
+                const fakeID = crypto.randomUUID();
 
-                if (response.ok) {
-                    alert("¡La IA ha pegado un chiste!");
+                const { error } = await client.from('jokes').insert([{ 
+                    text: randomJoke, 
+                    author: randomAuthor, 
+                    authorid: fakeID,
+                    color: randomColor, 
+                    ts: new Date().toISOString() 
+                }]);
+
+                if (!error) {
+                    alert("¡Chiste inyectado con éxito!");
                     loadJokes();
                 } else {
-                    alert("Error de la IA");
+                    alert("Error: " + error.message);
                 }
             } catch(e) {
-                alert("Error de red");
+                alert("Error de red: " + e.message);
             }
             this.disabled = false;
-            this.innerText = "🤖 Forzar Chiste IA";
+            this.innerText = "🤖 Inyectar Bóveda";
         });
 
         window.deleteJoke = async function(id) {

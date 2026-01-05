@@ -219,12 +219,10 @@
 
         function createCard(j) {
             var el = document.createElement('article'); el.className = 'post-it'; el.id = 'joke-' + j.id;
-            if (j.authorid === '00000000-0000-0000-0000-000000000000') el.classList.add('special-ai');
             var rot = (Math.random() * 4 - 2).toFixed(1); el.style.transform = `rotate(${rot}deg)`;
             var isLong = (j.text || "").length > 100;
             var isPopular = (j.votes_best || 0) > 10;
-            var isAI = (j.authorid === '00000000-0000-0000-0000-000000000000');
-            if ((isLong || isPopular) && !isAI) el.classList.add('wide'); // IA nunca es wide
+            if (isLong || isPopular) el.classList.add('wide');
             el.style.setProperty('--bg-c', j.color || '#fff9c4');
             el.innerHTML = `<div class="post-body">${j.text}</div>
                 <div class="post-footer">

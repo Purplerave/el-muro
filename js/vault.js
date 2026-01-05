@@ -1,0 +1,50 @@
+const JOKE_VAULT = [
+    "Mi mujer me ha dejado por mi obsesión con los videojuegos. Es una pena, era una relación de nivel 80.",
+    "¿Qué hace una abeja en el gimnasio? ¡Zumba!",
+    "Doctor, doctor, ¡tengo un hueso fuera! — Pues dígale que pase.",
+    "¿Por qué los pájaros vuelan hacia el sur en invierno? Porque caminando tardarían mucho.",
+    "Ayer me compré un reloj de pulsera, pero no me funciona. — ¿Por qué? — Porque no tengo pulsera.",
+    "He dejado de beber café en el trabajo. Ahora bebo té. — ¿Y qué tal? — Te-rrible.",
+    "¿Cómo se dice 'perro' en inglés? Dog. ¿Y 'veterinario'? Dog-tor.",
+    "Mamá, mamá, en el colegio me llaman despistado. — Niño, ¡que esta no es tu casa!",
+    "¿Cuál es el café más peligroso? El ex-preso.",
+    "¿Qué le dice un jardinero a otro? Nos vemos cuando podamos.",
+    "¿Qué hace un mudo bailando? Mudanza.",
+    "¿Cómo se queda un mago después de comer? Magordito.",
+    "¿Cuál es el coche favorito de un fotógrafo? El Ford Focus.",
+    "¿Por qué los fantasmas son malos mentirosos? Porque se les ve el plumero.",
+    "Van dos y se cae el del medio.",
+    "¿Cómo se llama el campeón de buceo japonés? Tokofondo.",
+    "Doctor, doctor, nadie me hace caso. — ¡Siguiente!",
+    "¿Qué hace un pez en el cine? ¡Estar en la pecera!",
+    "Mi perro es un genio. Le pregunto cuánto es 2 menos 2 y no me dice nada.",
+    "¿Por qué las focas miran siempre hacia arriba? Porque ahí están los focos.",
+    "Oye, ¿qué tal tu primer día de clase de natación? — Pues... nado.",
+    "¿Cómo se dice pañuelo en japonés? Sakamoko.",
+    "Ayer me caí y me hice una herida en la rodilla. — ¿Y te dolió? — No, me hizo gracia.",
+    "¿Qué le dice una iguana a su hermana gemela? Somos iguanitas.",
+    "¿Cuál es la fruta más paciente? La espera.",
+    "Camarero, ¡hay una mosca en mi sopa! — No se preocupe, la araña del segundo plato se encargará de ella.",
+    "¿Qué hace un pato en la selva? ¡Pata-patá!",
+    "¿Por qué el libro de matemáticas estaba tan triste? Porque tenía demasiados problemas.",
+    "¿Cómo se llama el primo vegetariano de Bruce Lee? Broco Lee.",
+    "¿Qué le dice un 2 a un 0? ¡Vente conmigo!",
+    "¿Qué hace una servilleta en el espacio? ¡Acompañar al cubierto!",
+    "Un niño le dice a su padre: Papá, ¿qué se siente al tener un hijo tan guapo? — No sé, pregúntale a tu abuelo.",
+    "¿Cómo se dice disparar en árabe? Ahí-va-la-bala.",
+    "¿Qué es un punto verde en el polo norte? Un pingüino con náuseas.",
+    "¿Cómo se llama el mejor jugador de fútbol chino? Sin-patada.",
+    "¿Qué le dice un semáforo a otro? ¡No me mires que me estoy cambiando!",
+    "Papá, ¿qué es la envidia? — No lo sé, hijo, pero ojalá lo supiera el vecino.",
+    "¿Cuál es el animal que más dientes tiene? El ratoncito Pérez.",
+    "¿Qué le dice una taza a otra? ¿Qué taza-ciendo?",
+    "¿Cómo se dice 'espejo' en chino? Ay-soy-yo."
+];
+
+const FAKE_AUTHORS = [
+    "Rulas23", "Anon_Humor", "Chistaco_Master", "La_Mari", "El_Pelas", 
+    "Humor_Negro_99", "Jagger_Fan", "Paco_Mermela", "Capitán_Risa", 
+    "Dinamita", "Zasca_Oficial", "El_Vecino", "User882", "Mister_Joke"
+];
+
+const VIBRANT_COLORS = ["#fff9c4", "#ff8a80", "#4caf50", "#81d4fa", "#ffd180", "#ea80fc"];

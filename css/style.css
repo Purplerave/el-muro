@@ -214,26 +214,8 @@ body {
 .av-opt { width: 45px; height: 45px; border-radius: 50%; cursor: pointer; border: 2px solid #eee; }
 .av-opt:hover { border-color: #000; }
 
-/* Especial IA (Robot Soft) */
-.post-it.special-ai {
-    background: #eceff1 !important;
-    border: 4px solid #546e7a !important;
-    box-shadow: 8px 8px 0px #000;
-}
-.post-it.special-ai .post-body {
-    font-family: var(--font-mono);
-    color: #263238 !important;
-}
-.post-it.special-ai .post-footer {
-    border-top-color: #546e7a;
-}
-.post-it.special-ai .act-btn {
-    background: #fff;
-    color: #000;
-    border-color: #000;
-}
-
-/* --- DASHBOARD NEO-BRUTALISTA (OCULTO) --- */
+/* Partículas de Risa */
+.confetti {
 #dashboard { 
     position: fixed; 
     right: -100%; 
