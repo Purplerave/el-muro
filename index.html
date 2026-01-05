@@ -46,18 +46,26 @@
             backdrop-filter: blur(1px); border: 1px solid rgba(0,0,0,0.1); z-index: 5;
         }
 
-        /* ESPECIAL IA (TERMINAL) */
+        /* ESPECIAL IA (ROBOT SOFT) */
         .post-it.special-ai {
-            background: #000 !important; border-color: #00ff00 !important;
-            box-shadow: 10px 10px 0px #00ff00;
+            background: #eceff1 !important; /* Gris azulado muy suave */
+            border: 4px solid #546e7a !important; /* Borde gris acero */
+            box-shadow: var(--neo-shadow); /* Sombra estándar */
+        }
+        .post-it.special-ai::after {
+            content: "🤖 IA";
+            position: absolute; top: -15px; right: -10px;
+            background: #546e7a; color: #fff;
+            padding: 2px 8px; font-size: 0.7rem; font-weight: bold;
+            transform: rotate(5deg); border: 2px solid #000;
         }
         .post-it.special-ai .post-body { 
-            font-family: var(--font-mono); color: #00ff00 !important; 
-            text-shadow: 0 0 5px #00ff00; font-size: 1.1rem;
+            font-family: var(--font-mono); 
+            color: #263238 !important; 
+            font-size: 1.3rem; 
         }
-        .post-it.special-ai.wide .post-body { font-size: 1.8rem !important; }
-        .post-it.special-ai .post-footer { border-top-color: #00ff00; color: #00ff00; }
-        .post-it.special-ai .act-btn { background: #000; color: #00ff00; border-color: #00ff00; }
+        .post-it.special-ai .post-footer { border-top-color: #546e7a; color: #546e7a; }
+        .post-it.special-ai .act-btn { background: #fff; color: #000; border-color: #000; }
 
         /* BENTO EFFECT */
         .post-it.wide { grid-column: span 2; }
@@ -213,8 +221,8 @@
             var rot = (Math.random() * 4 - 2).toFixed(1); el.style.transform = `rotate(${rot}deg)`;
             var isLong = (j.text || "").length > 100;
             var isPopular = (j.votes_best || 0) > 10;
-            var isAI = (j.authorid === '00000000-0000-0000-0000-000000000000');
-            if (isLong || isPopular || isAI) el.classList.add('wide');
+            // var isAI = (j.authorid === '00000000-0000-0000-0000-000000000000'); // Eliminado giant mode para IA
+            if (isLong || isPopular) el.classList.add('wide');
             el.style.setProperty('--bg-c', j.color || '#fff9c4');
             el.innerHTML = `<div class="post-body">${j.text}</div>
                 <div class="post-footer">

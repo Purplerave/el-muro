@@ -212,24 +212,23 @@ body {
 .av-opt { width: 45px; height: 45px; border-radius: 50%; cursor: pointer; border: 2px solid #eee; }
 .av-opt:hover { border-color: #000; }
 
-/* Especial IA (Technical Mono) */
+/* Especial IA (Robot Soft) */
 .post-it.special-ai {
-    background: #000 !important;
-    color: #00ff00 !important;
-    border-color: #00ff00 !important;
-    box-shadow: 8px 8px 0px #00ff00;
+    background: #eceff1 !important;
+    border: 4px solid #546e7a !important;
+    box-shadow: 8px 8px 0px #000;
 }
 .post-it.special-ai .post-body {
     font-family: var(--font-mono);
-    color: #00ff00 !important;
+    color: #263238 !important;
 }
 .post-it.special-ai .post-footer {
-    border-top-color: #00ff00;
+    border-top-color: #546e7a;
 }
 .post-it.special-ai .act-btn {
-    background: #000;
-    color: #00ff00;
-    border-color: #00ff00;
+    background: #fff;
+    color: #000;
+    border-color: #000;
 }
 
 /* --- DASHBOARD NEO-BRUTALISTA (OCULTO) --- */
