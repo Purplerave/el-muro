@@ -286,10 +286,10 @@
             var listHTML = worst.map(j => `
                 <div class="purgatory-item">
                     <div class="threat-level">⚠️ AMENAZA: CRÍTICA</div>
-                    <div style="font-family:var(--font-mono); font-size:0.8rem; margin-bottom:10px;">
-                        <strong>${j.author}</strong>: "${j.text.substring(0,60)}..."
+                    <div style="font-family:var(--font-mono); font-size:0.85rem; margin-bottom:15px; line-height:1.4; color:#eee;">
+                        <strong>${j.author}</strong>: <br>"${j.text}"
                     </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #333; padding-top:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #444; padding-top:10px;">
                         <span style="color:#ff1744; font-weight:900;">🍅 ${j.votes_bad} Votos</span>
                         ${isPurgeTime 
                             ? `<button class="act-btn" onclick="vote('${j.id}', 'save')" style="font-size:0.7rem; background:#00ff00; color:#000; border-color:#000;">🛡️ SALVAR</button>` 
