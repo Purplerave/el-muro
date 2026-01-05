@@ -191,7 +191,14 @@
 
         function loadUser() {
             var u; try { u = JSON.parse(localStorage.getItem('elMuro_v6_usr')); } catch(e) { u = null; }
-            if (!u || !u.id) { u = { id: crypto.randomUUID(), voted: [], alias: '', avatar: 'bot1' }; localStorage.setItem('elMuro_v6_usr', JSON.stringify(u)); }
+            if (!u || !u.id) { 
+                // Fallback para navegadores móviles que no soportan crypto.randomUUID
+                var newId = (typeof crypto.randomUUID === 'function') 
+                    ? crypto.randomUUID() 
+                    : Math.random().toString(36).substring(2) + Date.now().toString(36);
+                u = { id: newId, voted: [], alias: '', avatar: 'bot1' }; 
+                localStorage.setItem('elMuro_v6_usr', JSON.stringify(u)); 
+            }
             return u;
         }
 
@@ -236,6 +243,7 @@
         }
 
         window.vote = async function(id, type) {
+            if (!app.user) app.user = loadUser(); // Asegurar usuario
             var card = document.getElementById('joke-' + id);
             // Animaciones
             if (type === 'bad') { 
