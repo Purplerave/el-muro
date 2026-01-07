@@ -335,6 +335,13 @@
         window.vote = async function(id, type) {
             try {
                 if (!app.user) app.user = loadUser();
+                
+                // CHECK: SELF-VOTE
+                var targetJoke = app.state.jokes.find(j => String(j.id) === String(id));
+                if (targetJoke && targetJoke.authorid === app.user.id) {
+                    return alert("🚫 ¡Narcisismo detectado! No puedes votar tu propio chiste.");
+                }
+
                 var card = document.getElementById('joke-' + id);
                 
                 // Animaciones básicas primero
