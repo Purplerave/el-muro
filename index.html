@@ -81,12 +81,24 @@
             display: flex; justify-content: space-between; align-items: center; 
             border-top: 2px solid #000; padding-top: 10px; font-weight: 900; 
             font-size: 0.75rem; text-transform: uppercase;
+            gap: 10px; /* Separación mínima entre autor y botones */
+        }
+
+        /* Control de desbordamiento para el nombre del autor */
+        .post-footer > div:first-child {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1; /* Ocupa el espacio restante pero se encoge si es necesario */
+            min-width: 0; /* Permite que flex-shrink funcione correctamente en texto */
         }
 
         .actions {
             display: flex;
             gap: 5px;
             align-items: center;
+            flex-shrink: 0; /* NUNCA encoger los botones */
+            flex-wrap: nowrap; /* NUNCA saltar de línea */
         }
 
         .act-btn { 
