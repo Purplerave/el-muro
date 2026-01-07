@@ -194,6 +194,7 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script>
         var SUPABASE_URL = 'https://vqdzidtiyqsuxnlaztmf.supabase.co';
         var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZHppZHRpeXFzdXhubGF6dG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyODIxNTIsImV4cCI6MjA4Mjg1ODE1Mn0.ZmDwXQ_5Rg6mTBM8JS4eDYQoBvH9ceQmHL-ELKqdWVA';
@@ -251,12 +252,57 @@
                 <div class="post-footer">
                     <div style="font-family: var(--font-mono); font-size: 0.75rem;">👤 ${j.author}</div>
                     <div class="actions">
+                        <button class="act-btn" onclick="shareJoke('${j.id}')">📸</button>
                         <button class="act-btn" onclick="vote('${j.id}', 'best')">🤣 ${j.votes_best||0}</button>
                         <button class="act-btn" onclick="vote('${j.id}', 'bad')">🍅 ${j.votes_bad||0}</button>
                     </div>
                 </div>`;
             return el;
         }
+
+        window.shareJoke = function(id) {
+            var card = document.getElementById('joke-' + id);
+            if (!card) return;
+            
+            var btn = card.querySelector('button[onclick*="share"]');
+            var originalText = btn.innerHTML;
+            btn.innerHTML = '⏳';
+
+            html2canvas(card, { scale: 2, backgroundColor: null, useCORS: true }).then(canvas => {
+                canvas.toBlob(async blob => {
+                    if (!blob) return;
+                    var file = new File([blob], "chiste_muro.png", { type: "image/png" });
+                    
+                    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                files: [file],
+                                title: 'El Muro de los Chistes Malos',
+                                text: '¡Mira este chiste en El Muro!'
+                            });
+                            btn.innerHTML = '✅';
+                        } catch (e) {
+                            console.log("Share cancelled/failed", e);
+                            btn.innerHTML = originalText;
+                        }
+                    } else {
+                        try {
+                            const item = new ClipboardItem({ "image/png": blob });
+                            await navigator.clipboard.write([item]);
+                            alert("¡Imagen copiada al portapapeles!");
+                            btn.innerHTML = '📋';
+                        } catch (e) {
+                            var link = document.createElement('a');
+                            link.download = 'chiste_muro.png';
+                            link.href = canvas.toDataURL();
+                            link.click();
+                            btn.innerHTML = '⬇️';
+                        }
+                    }
+                    setTimeout(() => btn.innerHTML = originalText, 2000);
+                });
+            });
+        };
 
         window.vote = async function(id, type) {
             try {

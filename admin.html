@@ -146,6 +146,13 @@
                 <button id="ai-force-btn" class="admin-btn" style="width:auto; background:#e1bee7; color:#000;">🤖 Forzar Chiste IA</button>
             </div>
         </div>
+
+        <!-- ZONA DE PELIGRO -->
+        <div style="background:#3e1f1f; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #cf6679;">
+            <h3 style="margin-top:0; color:#cf6679;">☢️ ZONA DE PELIGRO</h3>
+            <p style="color:#bbb; font-size:0.9em; margin-bottom:10px;">Acciones destructivas masivas. Úsese con precaución.</p>
+            <button id="nuclear-btn" class="admin-btn" style="width:100%; background:#d32f2f; color:#fff;">💣 BORRAR TODO Y REPOBLAR (30 CHISTES)</button>
+        </div>
         
         <div style="margin-bottom: 1rem; display: flex; gap: 10px;">
              <button id="refresh-btn" class="admin-btn" style="width: auto;">🔄 Refrescar Lista</button>
@@ -331,6 +338,58 @@
             }
             this.disabled = false;
             this.innerText = "🤖 Inyectar Bóveda";
+        });
+
+        // REINICIO NUCLEAR (BORRAR Y REPOBLAR)
+        document.getElementById('nuclear-btn').addEventListener('click', async function() {
+            if(!confirm("⚠️ PELIGRO EXTREMO ⚠️\n\n¿Estás SEGURO de que quieres BORRAR TODOS los chistes actuales del Muro?\n\nEsta acción eliminará permanentemente todo el contenido y cargará 30 chistes aleatorios de la Bóveda.\n\n¿Continuar?")) return;
+            
+            this.disabled = true;
+            this.innerText = "⏳ Purgando base de datos...";
+
+            try {
+                // 1. Borrar Todo (Usando timestamp > 1970 como filtro seguro para "todos")
+                const { error: delError } = await client.from('jokes').delete().gt('ts', '1970-01-01T00:00:00Z');
+                
+                if (delError) {
+                    console.error("Delete Error:", delError);
+                    throw new Error("Fallo al borrar: " + delError.message);
+                }
+
+                this.innerText = "🌱 Sembrando caos...";
+
+                // 2. Preparar Lote (Batch Insert) de 30 chistes
+                const batch = [];
+                // Barajamos la bóveda
+                const shuffledJokes = [...JOKE_VAULT].sort(() => 0.5 - Math.random()).slice(0, 30);
+                
+                shuffledJokes.forEach(txt => {
+                    batch.push({
+                        text: txt,
+                        author: FAKE_AUTHORS[Math.floor(Math.random() * FAKE_AUTHORS.length)],
+                        authorid: crypto.randomUUID(), // IDs falsos variados para que no parezca todo del mismo
+                        color: VIBRANT_COLORS[Math.floor(Math.random() * VIBRANT_COLORS.length)],
+                        ts: new Date().toISOString()
+                    });
+                });
+
+                const { error: insError } = await client.from('jokes').insert(batch);
+                
+                if (insError) {
+                    console.error("Insert Error:", insError);
+                    throw new Error("Fallo al insertar: " + insError.message);
+                }
+
+                alert("✅ ¡Muro reiniciado con éxito! 30 chistes frescos cargados.");
+                loadJokes(); // Refrescar tabla visual
+
+            } catch(e) {
+                console.error(e);
+                alert("❌ Error Crítico: " + e.message);
+            }
+            
+            this.disabled = false;
+            this.innerText = "💣 BORRAR TODO Y REPOBLAR (30 CHISTES)";
         });
 
         window.deleteJoke = async function(id) {
