@@ -465,11 +465,28 @@
             document.getElementById('my-avatar-img').src = 'https://api.dicebear.com/7.x/bottts/svg?seed=' + (app.user.avatar || 'bot1');
             if(app.user.alias) document.getElementById('user-alias').value = app.user.alias;
             document.getElementById('post-btn').onclick = async function() {
-                var txt = document.getElementById('secret-input').value;
-                var al = document.getElementById('user-alias').value;
+                var txt = document.getElementById('secret-input').value.trim();
+                var al = document.getElementById('user-alias').value.trim();
+                
+                if (al.length < 2) return alert("❌ ¡Necesitas un ALIAS (mín. 2 letras)!");
+                if (txt.length < 3) return alert("❌ El chiste es demasiado corto, ¡esfuérzate!");
+
                 var col = document.querySelector('.dot.active').getAttribute('data-color');
-                await client.from('jokes').insert([{ text: txt, author: al, authorid: app.user.id, color: col, ts: new Date().toISOString() }]);
-                document.getElementById('secret-input').value = ''; initGlobalSync();
+                
+                // Guardar alias para siempre
+                app.user.alias = al;
+                localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user));
+
+                var { error } = await client.from('jokes').insert([{ 
+                    text: txt, author: al, authorid: app.user.id, color: col, ts: new Date().toISOString() 
+                }]);
+
+                if (error) {
+                    alert("Error al pegar el chiste: " + error.message);
+                } else {
+                    document.getElementById('secret-input').value = ''; 
+                    initGlobalSync();
+                }
             };
             document.getElementById('avatar-btn').onclick = function() { var s = document.getElementById('avatar-selector'); s.style.display = (s.style.display === 'grid' ? 'none' : 'grid'); };
             document.querySelectorAll('.av-opt').forEach(opt => { opt.onclick = function() { app.user.avatar = this.dataset.seed; document.getElementById('my-avatar-img').src = this.src; localStorage.setItem('elMuro_v6_usr', JSON.stringify(app.user)); document.getElementById('avatar-selector').style.display = 'none'; } });
