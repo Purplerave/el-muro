@@ -382,7 +382,18 @@
                     }
                 } else { 
                     if (type === 'save') alert("🛡️ INDULTO REGISTRADO.");
-                    initGlobalSync(); 
+                    
+                    // ACTUALIZACIÓN LOCAL SIN REORDENAR
+                    var span = card.querySelector(`button[onclick*="'${type}'"] .num-box`);
+                    if (span) {
+                        span.innerText = (parseInt(span.innerText) || 0) + 1;
+                    }
+                    // Actualizar el estado interno para que si se cambia de pestaña no se pierda el dato
+                    var jokeIdx = app.state.jokes.findIndex(j => String(j.id) === String(id));
+                    if (jokeIdx !== -1) {
+                        var field = (type === 'best' || type === 'save') ? 'votes_best' : 'votes_bad';
+                        app.state.jokes[jokeIdx][field] = (app.state.jokes[jokeIdx][field] || 0) + 1;
+                    }
                 }
             } catch (err) {
                 alert("Error crítico móvil: " + err.message);

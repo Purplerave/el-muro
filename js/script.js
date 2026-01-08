@@ -113,8 +113,19 @@ window.vote = async function(id, type) {
                 alert("¡YA HAS VOTADO ESTO!");
             }
         } else {
-            // Actualizar número visualmente
-            initGlobalSync();
+            // Actualizar número visualmente SOLO en el DOM (Sin reordenar)
+            var selector = (type === 'best' || type === 'save') ? 'button[onclick*="best"] span' : 'button[onclick*="bad"] span';
+            var span = card.querySelector(selector);
+            if (span) {
+                span.innerText = (parseInt(span.innerText) || 0) + 1;
+            }
+            
+            // Actualizar estado local
+            var localJoke = app.state.jokes.find(j => String(j.id) === String(id));
+            if (localJoke) {
+                if (type === 'best' || type === 'save') localJoke.votes_best = (localJoke.votes_best || 0) + 1;
+                else localJoke.votes_bad = (localJoke.votes_bad || 0) + 1;
+            }
         }
     } catch (err) {
         console.error("Fatal Error:", err);
